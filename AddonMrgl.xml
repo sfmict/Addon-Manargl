@@ -1,0 +1,268 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\..\Blizzard_SharedXML\UI.xsd">
+
+	<Button name="addonMgrPerformanceBtn" virtual="true">
+		<Layers>
+			<Layer level="BACKGROUND">
+				<FontString parentKey="topStr" inherits="GameFontNormalSmall">
+					<Anchors>
+						<Anchor point="TOP" y="-2"/>
+					</Anchors>
+				</FontString>
+				<FontString parentKey="bottomStr" inherits="GameFontWhite">
+					<Anchors>
+						<Anchor point="TOP" relativeKey="$parent.topStr" relativePoint="BOTTOM" y="-2"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<HighlightTexture parentKey="highlight" atlas="voicechat-channellist-row-highlight" alphaMode="ADD" setAllPoints="true"/>
+	</Button>
+
+	<Frame name="AddonMgrAddonList" movable="true" resizable="true" enableMouse="true" clampedToScreen="true" inherits="DefaultPanelTemplate" parent="UIParent" frameStrata="HIGH" hidden="true">
+		<Size x="650"/>
+		<Anchors>
+			<Anchor point="CENTER" x="0" y="24"/>
+		</Anchors>
+		<Frames>
+			<Button parentKey="closeButton" inherits="UIPanelCloseButtonNoScripts">
+				<Anchors>
+					<Anchor point="TOPRIGHT" x="1" y="0"/>
+				</Anchors>
+				<Scripts>
+					<OnClick>self:GetParent():Hide()</OnClick>
+				</Scripts>
+			</Button>
+			<Button parentKey="settingsBtn" mixin="QuestLogSettingsButtonMixin">
+				<Size x="15" y="16"/>
+				<Anchors>
+					<Anchor point="TOPRIGHT" x="-12" y="-35"/>
+				</Anchors>
+				<Layers>
+					<Layer level="ARTWORK">
+						<Texture parentKey="Icon" atlas="questlog-icon-setting" useAtlasSize="true">
+							<Anchors>
+								<Anchor point="CENTER"/>
+							</Anchors>
+						</Texture>
+					</Layer>
+					<Layer level="HIGHLIGHT">
+						<Texture atlas="questlog-icon-setting" useAtlasSize="true" inherits="QuestLogHighlightTextureTemplate">
+							<Anchors>
+								<Anchor point="CENTER" relativeKey="$parent.Icon"/>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnMouseDown method="OnMouseDown"/>
+					<OnMouseUp method="OnMouseUp"/>
+				</Scripts>
+			</Button>
+			<Frame parentKey="inset" useParentLevel="true" inherits="InsetFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" x="10" y="-60" />
+					<Anchor point="BOTTOMRIGHT" x="-5" y="26" />
+				</Anchors>
+				<Frames>
+					<Frame parentKey="performance" collapsesLayout="true">
+						<Size y="38"/>
+						<Anchors>
+							<Anchor point="LEFT" x="4" y="0"/>
+							<Anchor point="TOP" x="0" y="-4"/>
+							<Anchor point="RIGHT" x="-4" y="0"/>
+						</Anchors>
+						<Frames>
+							<Frame parentKey="left">
+								<Anchors>
+									<Anchor point="TOPLEFT"/>
+									<Anchor point="BOTTOMLEFT" y="7"/>
+									<Anchor point="RIGHT" relativePoint="CENTER"/>
+								</Anchors>
+								<Frames>
+									<Button parentKey="current" inherits="addonMgrPerformanceBtn">
+										<Anchors>
+											<Anchor point="TOPLEFT"/>
+											<Anchor point="BOTTOMLEFT"/>
+											<Anchor point="RIGHT" relativePoint="CENTER"/>
+										</Anchors>
+									</Button>
+									<Button parentKey="average" inherits="addonMgrPerformanceBtn">
+										<Anchors>
+											<Anchor point="TOPRIGHT"/>
+											<Anchor point="BOTTOMRIGHT"/>
+											<Anchor point="LEFT" relativePoint="CENTER"/>
+										</Anchors>
+									</Button>
+								</Frames>
+							</Frame>
+							<Frame parentKey="right">
+								<Anchors>
+									<Anchor point="TOPRIGHT"/>
+									<Anchor point="BOTTOMRIGHT" y="7"/>
+									<Anchor point="LEFT" relativePoint="CENTER"/>
+								</Anchors>
+								<Frames>
+									<Button parentKey="peak" inherits="addonMgrPerformanceBtn">
+										<Anchors>
+											<Anchor point="TOPLEFT"/>
+											<Anchor point="BOTTOMLEFT"/>
+											<Anchor point="RIGHT" relativePoint="CENTER"/>
+										</Anchors>
+									</Button>
+									<Button parentKey="encounter" inherits="addonMgrPerformanceBtn">
+										<Anchors>
+											<Anchor point="TOPRIGHT"/>
+											<Anchor point="BOTTOMRIGHT"/>
+											<Anchor point="LEFT" relativePoint="CENTER"/>
+										</Anchors>
+									</Button>
+								</Frames>
+							</Frame>
+						</Frames>
+						<Layers>
+							<Layer level="ARTWORK">
+								<Texture parentKey="Divider" atlas="Options_HorizontalDivider" useAtlasSize="true">
+									<Anchors>
+										<Anchor point="LEFT" x="0" y="0"/>
+										<Anchor point="RIGHT" x="0" y="0"/>
+										<Anchor point="BOTTOM" relativePoint="BOTTOM" x="0" y="5"/>
+									</Anchors>
+								</Texture>
+							</Layer>
+						</Layers>
+					</Frame>
+					<Frame parentKey="scrollBox" inherits="WowScrollBoxList">
+						<Anchors>
+							<Anchor point="TOP" relativeKey="$parent.performance" relativePoint="BOTTOM" x="0" y="0"/>
+							<Anchor point="LEFT" x="4"/>
+							<Anchor point="BOTTOMRIGHT" x="-26" y="4"/>
+						</Anchors>
+					</Frame>
+					<EventFrame parentKey="scrollBar" inherits="MinimalScrollBar">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeKey="$parent.scrollBox" relativePoint="TOPRIGHT" x="8" y="-2"/>
+							<Anchor point="BOTTOMLEFT" relativeKey="$parent.scrollBox" relativePoint="BOTTOMRIGHT" x="8" y="0"/>
+						</Anchors>
+					</EventFrame>
+				</Frames>
+			</Frame>
+			<Button parentKey="enableAll" inherits="UIPanelButtonTemplate" text="ENABLE_ALL_ADDONS">
+				<Size y="22"/>
+				<Anchors>
+					<Anchor point="BOTTOMLEFT" x="8" y="4"/>
+				</Anchors>
+			</Button>
+			<Button parentKey="disableAll" inherits="UIPanelButtonTemplate" text="DISABLE_ALL_ADDONS">
+				<Size y="22"/>
+				<Anchors>
+					<Anchor point="LEFT" relativeKey="$parent.enableAll" relativePoint="RIGHT"/>
+				</Anchors>
+			</Button>
+			<Button parentKey="cancel" inherits="UIPanelButtonTemplate" text="CANCEL">
+				<Size y="22"/>
+				<Anchors>
+					<Anchor point="BOTTOMRIGHT" x="-16" y="4"/>
+				</Anchors>
+			</Button>
+			<Button parentKey="okay" inherits="UIPanelButtonTemplate" text="RELOADUI">
+				<Size y="22"/>
+				<Anchors>
+					<Anchor point="RIGHT" relativeKey="$parent.cancel" relativePoint="LEFT"/>
+				</Anchors>
+			</Button>
+			<Button parentKey="resize">
+				<Size x="16" y="16"/>
+				<Anchors>
+					<Anchor point="BOTTOMRIGHT" x="0" y="0"/>
+				</Anchors>
+				<NormalTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Up"/>
+				<HighlightTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Highlight"/>
+				<PushedTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Down"/>
+			</Button>
+		</Frames>
+	</Frame>
+
+	<Button name="AddonMgrListNormal" registerForClicks="LeftButtonUp, RightButtonUp" mixin="AddonMgrListNormalMixin" virtual="true">
+		<Layers>
+			<Layer level="BACKGROUND">
+				<!-- <Texture parentKey="lock" file="Interface\AddOns\AddonMrgl\media\lock"> -->
+				<Texture parentKey="lock" file="interface/lfgframe/ui-lfg-icon-lock">
+					<Size x="20" y="20"/>
+					<Anchors>
+						<Anchor point="LEFT" x="18" y="-1"/>
+					</Anchors>
+				</Texture>
+				<Texture parentKey="icon">
+					<Size x="18" y="18"/>
+					<Anchors>
+						<Anchor point="LEFT" x="40"/>
+					</Anchors>
+				</Texture>
+				<FontString inherits="GameFontNormalSmall" justifyH="RIGHT" parentKey="status">
+					<Size y="12"/>
+					<Anchors>
+						<Anchor point="RIGHT"/>
+					</Anchors>
+					<Color r=".5" g=".5" b=".5"/>
+				</FontString>
+				<FontString inherits="GameFontNormal" justifyH="LEFT" parentKey="title" >
+					<Size y="12"/>
+					<Anchors>
+						<Anchor point="LEFT" relativeKey="$parent.icon" relativePoint="RIGHT" x="2"/>
+						<Anchor point="RIGHT" relativeKey="$parent.status" relativePoint="LEFT" x="-2"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<HighlightTexture parentKey="highlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD">
+			<Size y="20"/>
+			<Anchors>
+				<Anchor point="LEFT" relativeKey="$parent.title"/>
+				<Anchor point="RIGHT"/>
+			</Anchors>
+		</HighlightTexture>
+		<Frames>
+			<CheckButton parentKey="check" registerForClicks="LeftButtonUp, RightButtonUp" inherits="MinimalCheckboxArtTemplate">
+				<Size x="22" y="22"/>
+				<Anchors>
+					<Anchor point="LEFT" x="14"/>
+				</Anchors>
+			</CheckButton>
+			<Button inherits="UIPanelButtonTemplate" text="LOAD_ADDON" hidden="true" parentKey="loadButton">
+				<Size x="100" y="22"/>
+				<Anchors>
+					<Anchor point="RIGHT"/>
+				</Anchors>
+				<KeyValues>
+					<KeyValue key="tooltipText" value="ADDON_DEMAND_LOADED" type="global"/>
+				</KeyValues>
+			</Button>
+		</Frames>
+		<Scripts>
+			<OnLoad method="onLoad"/>
+			<OnClick method="onClick"/>
+			<OnEnter method="onEnter"/>
+			<OnLeave method="onLeave"/>
+		</Scripts>
+	</Button>
+
+	<Button name="AddonMgrListParent" inherits="AddonMgrListNormal" virtual="true">
+		<Frames>
+			<Button parentKey="collapseExpand" mixin="AddonMgrListParentCategoryMixin">
+				<Size x="10" y="16"/>
+				<Anchors>
+					<Anchor point="LEFT"/>
+				</Anchors>
+				<NormalTexture parentKey="mormal" atlas="bag-arrow"/>
+				<PushedTexture parentKey="pushed" atlas="bag-arrow"/>
+				<HighlightTexture parentKey="highlight" alpha="0.4" alphaMode="ADD" atlas="bag-arrow"/>
+				<Scripts>
+					<OnLoad method="onLoad"/>
+					<OnClick method="onClick"/>
+				</Scripts>
+			</Button>
+		</Frames>
+	</Button>
+
+</Ui>

@@ -1,0 +1,161 @@
+local addon, ns = ...
+local L = ns.L
+local listFrame = AddonMgrAddonList
+
+
+listFrame:HookScript("OnShow", function(self)
+	self.contexMenu = LibStub("LibSFDropDown-1.5"):SetMixin({})
+	self.contexMenu:ddHideWhenButtonHidden(self.scrollBox)
+	self.contexMenu:ddSetDisplayMode("menu")
+
+	self.contexMenu:ddSetInitFunc(function(dd, level, index)
+		local info = {}
+		local name, title = C_AddOns.GetAddOnInfo(index)
+		local checked = C_AddOns.GetAddOnEnableState(index, self.charName) > Enum.AddOnEnableState.None
+
+		info.keepShownOnClick = true
+		info.notCheckable = true
+		info.isTitle = true
+		info.text = self.config.showNameInsteadOfTitle and name or title
+		dd:ddAddButton(info, level)
+
+		info.isTitle = nil
+		info.notCheckable = nil
+		info.isNotRadio = true
+		info.text = L["Lock addon"]
+		info.func = function(_,_,_, checked)
+			self.locked[name] = checked
+			local button = self.scrollBox:FindFrameByPredicate(function(btn, node)
+				return node:GetData().index == index
+			end)
+			if button then self:normalInit(button, button:GetElementData()) end
+			dd:ddRefresh(level)
+		end
+		info.checked = self.locked[name]
+		dd:ddAddButton(info, level)
+
+		info.keepShownOnClick = nil
+		info.notCheckable = true
+		info.disabled = function() return self.locked[name] end
+
+		if self.childByPIndex[index] then
+			info.text = checked and L["Disable with children"] or L["Enalbe with children"]
+			info.func = function()
+				self:enableAddon(name, not checked)
+				self:enableAddonChildren(name, not checked)
+				self:updateList()
+				self:updateReloadButton()
+			end
+			dd:ddAddButton(info, level)
+		end
+
+		if C_AddOns.GetAddOnDependencies(index) then
+			info.text = checked and L["Disable with dependencies"] or L["Enable with dependencies"]
+			info.func = function()
+				self:enableAddon(name, not checked)
+				self:enableAddonDependencies(name, not checked)
+				self:updateList()
+				self:updateReloadButton()
+			end
+			dd:ddAddButton(info, level)
+		end
+
+		info.disabled = nil
+		info.func = nil
+		info.text = CANCEL
+		dd:ddAddButton(info, level)
+	end)
+
+	self.scrollBox:RegisterCallback(self.scrollBox.Event.OnDataRangeChanged, function()
+		if self.doNotHideMenu then return end
+		self.contexMenu:ddOnHide()
+	end)
+end)
+
+
+AddonMgrListNormalMixin = {}
+
+
+do
+	local function addonToggle(btn, button)
+		local parent = btn:GetParent()
+		if button == "LeftButton" then
+			if IsAltKeyDown() then
+				listFrame.locked[parent.name] = not listFrame.locked[parent.name]
+				listFrame:normalInit(parent, parent:GetElementData())
+			else
+				if listFrame.locked[parent.name] then return end
+				local checked = btn:GetChecked()
+				PlaySound(checked and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON or SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
+				listFrame:enableAddon(parent.name, checked)
+				if IsShiftKeyDown() then
+					listFrame:enableAddonChildren(parent.name, checked)
+				end
+				listFrame:updateReloadButton()
+				listFrame:updateList()
+			end
+		else
+			btn:SetChecked(not btn:GetChecked())
+			parent:GetScript("OnClick")(parent, button)
+		end
+	end
+
+
+	local function loadAddon(btn)
+		C_AddOns.LoadAddOn(btn:GetParent().name)
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+	end
+
+
+	function AddonMgrListNormalMixin:onLoad()
+		self.check:SetScript("OnClick", addonToggle)
+		self.check:SetPropagateMouseMotion(true)
+		self.loadButton:SetWidth(self.loadButton:GetTextWidth() + 20)
+		self.loadButton:SetScript("OnClick", loadAddon)
+	end
+end
+
+
+function AddonMgrListNormalMixin:onClick(button)
+	if button == "LeftButton" then
+		self.check:Click()
+	else
+		listFrame.contexMenu:ddToggle(1, self:GetData().index, "cursor")
+	end
+end
+
+
+function AddonMgrListNormalMixin:onEnter()
+	listFrame.tooltipIndex = self:GetData().index
+	GameTooltip:SetOwner(self, "ANCHOR_NONE")
+	GameTooltip:SetPoint("LEFT", self, "RIGHT")
+	listFrame:updateTooltip()
+end
+
+
+function AddonMgrListNormalMixin:onLeave()
+	listFrame.tooltipIndex = nil
+	GameTooltip:Hide()
+end
+
+
+AddonMgrListParentCategoryMixin = {}
+
+
+function AddonMgrListParentCategoryMixin:onLoad()
+end
+
+
+function AddonMgrListParentCategoryMixin:onClick()
+	local collapsed = self.node:ToggleCollapsed(TreeDataProviderConstants.RetainChildCollapse, TreeDataProviderConstants.DoInvalidation)
+	listFrame:setCollapsed(self.node:GetData().index, collapsed)
+	self:updateState()
+end
+
+
+function AddonMgrListParentCategoryMixin:updateState()
+	local arrowRotation = self.node:IsCollapsed() and math.pi or math.pi * .5
+	self.mormal:SetRotation(arrowRotation)
+	self.pushed:SetRotation(arrowRotation)
+	self.highlight:SetRotation(arrowRotation)
+end

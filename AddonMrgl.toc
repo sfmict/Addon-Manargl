@@ -1,0 +1,17 @@
+## Interface: 110100
+## Title: Addon Manargl
+## Author: sfmict
+## Version: @project-version@
+## IconTexture: 656557
+## IconTexture2: 1499566
+## IconTexture3: 354719
+## Notes: Convenient hiding panel
+## SavedVariables: AddonMgrDB
+embeds.xml
+locales.xml
+AddonMrgl.xml
+AddonMrgl.lua
+ListButtons.lua
+Profiles.lua
+Settings.lua
+MinimapButton.lua
