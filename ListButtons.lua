@@ -4,11 +4,11 @@ local listFrame = AddonMgrAddonList
 
 
 listFrame:HookScript("OnShow", function(self)
-	self.contexMenu = LibStub("LibSFDropDown-1.5"):SetMixin({})
-	self.contexMenu:ddHideWhenButtonHidden(self.scrollBox)
-	self.contexMenu:ddSetDisplayMode("menu")
+	self.contextMenu = LibStub("LibSFDropDown-1.5"):SetMixin({})
+	self.contextMenu:ddHideWhenButtonHidden(self.scrollBox)
+	self.contextMenu:ddSetDisplayMode("menu")
 
-	self.contexMenu:ddSetInitFunc(function(dd, level, index)
+	self.contextMenu:ddSetInitFunc(function(dd, level, index)
 		local info = {}
 		local name, title = C_AddOns.GetAddOnInfo(index)
 		local checked = C_AddOns.GetAddOnEnableState(index, self.charName) > Enum.AddOnEnableState.None
@@ -68,7 +68,7 @@ listFrame:HookScript("OnShow", function(self)
 
 	self.scrollBox:RegisterCallback(self.scrollBox.Event.OnDataRangeChanged, function()
 		if self.doNotHideMenu then return end
-		self.contexMenu:ddOnHide()
+		self.contextMenu:ddOnHide()
 	end)
 end)
 
@@ -120,7 +120,7 @@ function AddonMgrListNormalMixin:onClick(button)
 	if button == "LeftButton" then
 		self.check:Click()
 	else
-		listFrame.contexMenu:ddToggle(1, self:GetData().index, "cursor")
+		listFrame.contextMenu:ddToggle(1, self:GetData().index, "cursor")
 	end
 end
 

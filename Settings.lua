@@ -76,7 +76,7 @@ listFrame:HookScript("OnShow", function(self)
 			dd:ddAddButton(info, level)
 
 			info.isTitle = nil
-			info.text = L["Collapse all"]
+			info.text = L["Collapse All"]
 			info.func = function()
 				for i in next, self.childByPIndex do
 					self:setCollapsed(i, true)
@@ -85,7 +85,7 @@ listFrame:HookScript("OnShow", function(self)
 			end
 			dd:ddAddButton(info, level)
 
-			info.text = L["Expand all"]
+			info.text = L["Expand All"]
 			info.func = function()
 				for i in next, self.childByPIndex do
 					self:setCollapsed(i, false)
@@ -96,7 +96,7 @@ listFrame:HookScript("OnShow", function(self)
 
 			info.notCheckable = nil
 			info.isNotRadio = true
-			info.text = L["Show name instead of title"]
+			info.text = L["Show Name instead of Title"]
 			info.func = function(_,_,_, checked)
 				self.config.showNameInsteadOfTitle = checked or nil
 				self:updateList()
@@ -104,7 +104,18 @@ listFrame:HookScript("OnShow", function(self)
 			info.checked = self.config.showNameInsteadOfTitle
 			dd:ddAddButton(info, level)
 
-			info.text = L["Show no icon texture"]
+			info.text = L["Show Icon"]
+			info.func = function(_,_,_, checked)
+				self.config.showIcon = checked
+				self:updateList()
+				dd:ddRefresh(level)
+			end
+			info.checked = self.config.showIcon
+			dd:ddAddButton(info, level)
+
+			info.indent = 16
+			info.disabled = function() return not self.config.showIcon end
+			info.text = L["Show no Icon Texture"]
 			info.func = function(_,_,_, checked)
 				self.config.showNoIcon = checked
 				self:updateList()
@@ -112,7 +123,9 @@ listFrame:HookScript("OnShow", function(self)
 			info.checked = self.config.showNoIcon
 			dd:ddAddButton(info, level)
 
-			info.text = L["Show version"]
+			info.indent = nil
+			info.disabled = nil
+			info.text = L["Show Version"]
 			info.func = function(_,_,_, checked)
 				self.config.showVersion = checked or nil
 				self:updateList()
@@ -130,6 +143,29 @@ listFrame:HookScript("OnShow", function(self)
 
 			info.text = L["Sort by"]
 			info.value = "sort"
+			dd:ddAddButton(info, level)
+
+			dd:ddAddSeparator(level)
+
+			info.value = nil
+			info.hasArrow = nil
+			info.isTitle = true
+			info.text = L["Search Options"]
+			dd:ddAddButton(info, level)
+
+			info.isTitle = nil
+			info.notCheckable = nil
+			info.text = L["Autofocus search when opening addon"]
+			info.func = function(_,_,_, checked)
+				self.config.autofocusSearch = checked
+			end
+			info.checked = self.config.autofocusSearch
+			dd:ddAddButton(info, level)
+
+			info.notCheckable = true
+			info.hasArrow = true
+			info.text = L["Search by"]
+			info.value = "searchBy"
 			dd:ddAddButton(info, level)
 
 		elseif value == "memUpdate" then
@@ -281,6 +317,32 @@ listFrame:HookScript("OnShow", function(self)
 
 			info.text = NONE
 			info.value = nil
+			dd:ddAddButton(info, level)
+
+		elseif value == "searchBy" then
+			info.keepShownOnClick = true
+			info.isNotRadio = true
+
+			info.func = function(btn, _,_, checked)
+				self.config.searchBy[btn.value] = checked
+				self:updateFilters()
+			end
+			info.checked = function(btn) return self.config.searchBy[btn.value] end
+
+			info.text = L["Title"]
+			info.value = "title"
+			dd:ddAddButton(info, level)
+
+			info.text = NAME
+			info.value = "name"
+			dd:ddAddButton(info, level)
+
+			info.text = L["Author"]
+			info.value = "author"
+			dd:ddAddButton(info, level)
+
+			info.text = CATEGORY
+			info.value = "category"
 			dd:ddAddButton(info, level)
 		end
 	end)

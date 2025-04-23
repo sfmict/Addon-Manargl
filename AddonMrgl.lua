@@ -31,7 +31,13 @@ function listFrame:ADDON_LOADED(addonName)
 		if self.config.cpuUpdate == nil then self.config.cpuUpdate = 1 end
 		if self.config.replaceAddonButton == nil then self.config.replaceAddonButton = true end
 		if self.config.usePlayer == nil then self.config.usePlayer = true end
+		if self.config.showIcon == nil then self.config.showIcon = true end
 		if self.config.showNoIcon == nil then self.config.showNoIcon = true end
+		self.config.searchBy = self.config.searchBy or {}
+		if self.config.searchBy.title == nil then self.config.searchBy.title = true end
+		if self.config.searchBy.name == nil then self.config.searchBy.name = true end
+		if self.config.searchBy.author == nil then self.config.searchBy.author = true end
+		if self.config.searchBy.category == nil then self.config.searchBy.category = true end
 
 		self.profiles = self.db.profiles
 		self.charProfiles = self.db.charProfiles
@@ -80,7 +86,7 @@ function listFrame:ADDON_LOADED(addonName)
 			end
 
 			if GameMenuButtonAddons then
-				overrideScript(widget)
+				overrideScript(GameMenuButtonAddons)
 			else
 				for widget in GameMenuFrame.buttonPool:EnumerateActive() do
 					if widget:GetText() == ADDONS then
@@ -99,11 +105,7 @@ end
 listFrame:SetScript("OnShow", function(self)
 	self:SetScript("OnShow", self.onShow)
 	self:SetFrameLevel(2000)
-	self:SetHeight(UIParent:GetHeight() / UIParent:GetScale() * .5)
 	self:RegisterForDrag("LeftButton")
-	self:SetScript("OnDragStart", self.StartMoving)
-	self:SetScript("OnDragStop", self.StopMovingOrSizing)
-	self:SetResizeBounds(600, 300)
 	self:SetTitle(C_AddOns.GetAddOnMetadata(addon, "Title"))
 	tinsert(UISpecialFrames, self:GetName())
 
@@ -126,6 +128,41 @@ listFrame:SetScript("OnShow", function(self)
 	self.encounterStr = "%s |Cff777777|||r "..self.encounterIcon.." %s"
 
 	local lsfdd = LibStub("LibSFDropDown-1.5")
+
+	-- SET SIZE & POS
+	local minWidth = 600
+	local minHeight = 400
+	local maxWidth = UIParent:GetWidth() - 100
+	local maxHeight = UIParent:GetHeight() - 100
+	local width = Clamp(self.config.width or 600, minWidth, maxWidth)
+	local height = Clamp(self.config.height or maxHeight * .75, minHeight, maxHeight)
+	self:SetSize(width, height)
+	if self.config.posX and self.config.posY then
+		self:SetPoint("CENTER", UIParent, "BOTTOMLEFT", self.config.posX, self.config.posY)
+	end
+
+	-- MOVING
+	self:SetScript("OnDragStart", self.StartMoving)
+	self:SetScript("OnDragStop", function(self)
+		self:StopMovingOrSizing()
+		self.config.posX, self.config.posY = self:GetCenter()
+	end)
+
+	-- RESIZE
+	self.resize:SetScript("OnEnter", function() SetCursor("UI_RESIZE_CURSOR") end)
+	self.resize:SetScript("OnLeave", function() SetCursor(nil) end)
+	self.resize:SetScript("OnMouseDown", function(self)
+		local parent = self:GetParent()
+		local maxWidth = UIParent:GetWidth() - 100
+		local maxHeight = UIParent:GetHeight() - 100
+		parent:SetResizeBounds(min(minWidth, maxWidth), min(minHeight, maxHeight), maxWidth, maxHeight)
+		parent:StartSizing("BOTTOMRIGHT", true)
+	end)
+	self.resize:SetScript("OnMouseUp", function(self)
+		local parent = self:GetParent()
+		parent:StopMovingOrSizing()
+		parent.config.width, parent.config.height = parent:GetSize()
+	end)
 
 	-- CIRCULAR & CATEGORIES
 	local context = {}
@@ -368,12 +405,6 @@ listFrame:SetScript("OnShow", function(self)
 		parent:Hide()
 	end)
 
-	-- RESIZE
-	self.resize:SetScript("OnEnter", function() SetCursor("UI_RESIZE_CURSOR") end)
-	self.resize:SetScript("OnLeave", function() SetCursor(nil) end)
-	self.resize:SetScript("OnMouseDown", function(self) self:GetParent():StartSizing("BOTTOMRIGHT", true) end)
-	self.resize:SetScript("OnMouseUp", function(self) self:GetParent():StopMovingOrSizing() end)
-
 	-- TABLES
 	self.hasParentByIndex = {}
 	self.childByPIndex = {}
@@ -401,16 +432,16 @@ listFrame:SetScript("OnHide", function(self)
 end)
 
 
-C_Timer.After(0, function()
-	listFrame:Show()
-end)
-
-
 function listFrame:onShow()
 	UpdateAddOnMemoryUsage()
 	self:updatePerformance()
 	self:updateList()
 	self:updateReloadButton()
+
+	self.searchBox:SetText("")
+	if self.config.autofocusSearch then
+		self.searchBox:SetFocus()
+	end
 end
 
 
@@ -576,11 +607,11 @@ function listFrame:sort()
 				if ma and mb then
 					if ma > mb then return true
 					elseif ma < mb then return false end
-				elseif ma and not mb then return true
-				elseif not ma and mb then return false end
+				elseif ma then return true
+				elseif mb then return false end
 
-			elseif loadedA and not loadedB then return true
-			elseif not loadedA and loadedB then return false end
+			elseif loadedA then return true
+			elseif loadedB then return false end
 		end
 
 		if self.config.sortBy == "title" then
@@ -948,16 +979,21 @@ function listFrame:normalInit(f, node)
 	local iconAtlas = C_AddOns.GetAddOnMetadata(index, "IconAtlas")
 	f.name = name
 
-	if not iconTexture and not iconAtlas then
-		iconTexture = self.config.showNoIcon and [[Interface\ICONS\INV_Misc_QuestionMark]]
-	end
+	if self.config.showIcon then
+		if not iconTexture and not iconAtlas then
+			iconTexture = self.config.showNoIcon and [[Interface\ICONS\INV_Misc_QuestionMark]]
+		end
 
-	if iconTexture then
-		f.icon:SetTexture(iconTexture)
-	elseif iconAtlas then
-		f.icon:SetAtlas(iconAtlas)
+		if iconTexture then
+			f.icon:SetTexture(iconTexture)
+		elseif iconAtlas then
+			f.icon:SetAtlas(iconAtlas)
+		else
+			f.icon:SetTexture()
+		end
+		f.icon:Show()
 	else
-		f.icon:SetTexture()
+		f.icon:Hide()
 	end
 
 	local loadable, reason = C_AddOns.IsAddOnLoadable(index, self.addonCharacter)
@@ -1083,6 +1119,7 @@ end
 
 function listFrame:updateFilters()
 	local text = self.searchBox:GetText():trim():lower()
+	local searchBy = self.config.searchBy
 	wipe(self.indexByName)
 	wipe(self.filtred)
 
@@ -1090,17 +1127,17 @@ function listFrame:updateFilters()
 		local index = self.sorted[i]
 		local name = self.nameByIndex[index]
 		local title = self.titleByIndex[index]
-		--local group = C_AddOns.GetAddOnMetadata(index, "Group")
+		local author = C_AddOns.GetAddOnMetadata(index, "Author")
 		local category = C_AddOns.GetAddOnMetadata(index, "Category")
 		local loadable, reason = C_AddOns.IsAddOnLoadable(index, self.addonCharacter)
 		local enabled = loadable or reason == "DEMAND_LOADED"
 
 		if (enabled and self.filters.enabled or not enabled and self.filters.disabled)
 		and (#text == 0
-			or name:lower():find(text, 1, true)
-			or title:find(text, 1, true)
-			--or group:lower():find(text, 1, true)
-			or category and category:lower():find(text, 1, true))
+			or searchBy.name and name:lower():find(text, 1, true)
+			or searchBy.title and title:find(text, 1, true)
+			or searchBy.author and author and author:lower():find(text, 1, true)
+			or searchBy.category and category and category:lower():find(text, 1, true))
 		and self.categoriesFilter[category or "rest"]
 		then
 			self.indexByName[name] = index

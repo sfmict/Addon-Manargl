@@ -32,7 +32,7 @@ listFrame:HookScript("OnShow", function(self)
 
 	--POPUP
 	StaticPopupDialogs[self.addonName.."NEW_PROFILE"] = {
-		text = addon..": "..L["New profile"],
+		text = addon..": "..L["Create profile"],
 		button1 = ACCEPT,
 		button2 = CANCEL,
 		hasEditBox = 1,
@@ -113,7 +113,7 @@ listFrame:HookScript("OnShow", function(self)
 			info.keepShownOnClick = true
 			info.notCheckable = true
 			info.hasArrow = true
-			info.text = L["Charactes"]
+			info.text = L["Characters"]
 			info.value = "chars"
 			dd:ddAddButton(info, level)
 
@@ -235,13 +235,13 @@ listFrame:HookScript("OnShow", function(self)
 
 		elseif level == 3 then
 			local list = {}
-			local EMPTY = true
+			local empty = true
 
 			local func = function(btn, _,_, checked) self:setLoadProfiles(value, btn.value, checked) end
 
 			for i, profile in ipairs(self.profiles) do
 				if profile ~= value then
-					count = false
+					empty = false
 					list[#list + 1] = {
 						keepShownOnClick = true,
 						isNotRadio = true,
@@ -277,7 +277,7 @@ end
 
 
 function listFrame:rewriteProfileAddons(profile)
-	StaticPopup_Show(self.addonName.."CUSTOM_OK_CANCEL", L["Rewrite addon to %s profile?"]:format(NORMAL_FONT_COLOR:WrapTextInColorCode(profile.name)), nil, function()
+	StaticPopup_Show(self.addonName.."CUSTOM_OK_CANCEL", L["Rewrite addons to %s profile?"]:format(NORMAL_FONT_COLOR:WrapTextInColorCode(profile.name)), nil, function()
 		self:saveProfileAddons(profile)
 	end)
 end

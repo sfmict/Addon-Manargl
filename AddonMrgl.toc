@@ -1,11 +1,9 @@
-## Interface: 110100
+## Interface: 110105
 ## Title: Addon Manargl
 ## Author: sfmict
 ## Version: @project-version@
 ## IconTexture: 656557
-## IconTexture2: 1499566
-## IconTexture3: 354719
-## Notes: Convenient hiding panel
+## Notes: Addon Manargl mrglwglwlg!
 ## SavedVariables: AddonMgrDB
 embeds.xml
 locales.xml

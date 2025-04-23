@@ -19,7 +19,7 @@
 		<HighlightTexture parentKey="highlight" atlas="voicechat-channellist-row-highlight" alphaMode="ADD" setAllPoints="true"/>
 	</Button>
 
-	<Frame name="AddonMgrAddonList" movable="true" resizable="true" enableMouse="true" clampedToScreen="true" inherits="DefaultPanelTemplate" parent="UIParent" frameStrata="HIGH" hidden="true">
+	<Frame name="AddonMgrAddonList" dontSavePosition="true" movable="true" resizable="true" enableMouse="true" clampedToScreen="true" inherits="DefaultPanelTemplate" parent="UIParent" frameStrata="HIGH" hidden="true">
 		<Size x="650"/>
 		<Anchors>
 			<Anchor point="CENTER" x="0" y="24"/>
@@ -186,14 +186,13 @@
 	<Button name="AddonMgrListNormal" registerForClicks="LeftButtonUp, RightButtonUp" mixin="AddonMgrListNormalMixin" virtual="true">
 		<Layers>
 			<Layer level="BACKGROUND">
-				<!-- <Texture parentKey="lock" file="Interface\AddOns\AddonMrgl\media\lock"> -->
 				<Texture parentKey="lock" file="interface/lfgframe/ui-lfg-icon-lock">
 					<Size x="20" y="20"/>
 					<Anchors>
 						<Anchor point="LEFT" x="18" y="-1"/>
 					</Anchors>
 				</Texture>
-				<Texture parentKey="icon">
+				<Texture parentKey="icon" collapsesLayout="true">
 					<Size x="18" y="18"/>
 					<Anchors>
 						<Anchor point="LEFT" x="40"/>
