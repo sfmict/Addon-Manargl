@@ -3,10 +3,11 @@ local L = ns.L
 local listFrame = AddonMgrAddonList
 local C_AddOns, C_AddOnProfiler = C_AddOns, C_AddOnProfiler
 
+local LEFT_MOUSE_ICON = C_Texture.GetAtlasInfo("newplayertutorial-icon-mouse-leftbutton") and "|A:newplayertutorial-icon-mouse-leftbutton:0:0|a" or ""
+local RIGHT_MOUSE_ICON = C_Texture.GetAtlasInfo("newplayertutorial-icon-mouse-rightbutton") and "|A:newplayertutorial-icon-mouse-rightbutton:0:0|a" or ""
 local BANNED = "BANNED"
 local SECURE_PROTECTED = "SECURE_PROTECTED"
 local SECURE = "SECURE"
-local MEMORY = ADDON_LIST_PERFORMANCE_MEMORY_MB:gsub(":.*", "")
 
 
 listFrame:SetScript("OnEvent", function(self, event, ...) self[event](self, ...) end)
@@ -110,6 +111,7 @@ listFrame:SetScript("OnShow", function(self)
 	tinsert(UISpecialFrames, self:GetName())
 
 	self.addonName = ("%s_ADDON_"):format(addon:upper())
+	self.isMainline = WOW_PROJECT_MAINLINE == WOW_PROJECT_ID
 
 	self.performance = self.inset.performance
 	self.currentCPU = self.performance.left.current
@@ -128,6 +130,32 @@ listFrame:SetScript("OnShow", function(self)
 	self.encounterStr = "%s |Cff777777|||r "..self.encounterIcon.." %s"
 
 	local lsfdd = LibStub("LibSFDropDown-1.5")
+
+	if not self.isMainline then
+		self.closeButton:SetPoint("TOPRIGHT", 4, 4)
+
+		self.settingsBtn.Icon:SetTexture([[Interface\Worldmap\Gear_64]])
+		self.settingsBtn.Icon:SetTexCoord(0, .5, 0, .5)
+		self.settingsBtn.Icon:SetVertexColor(.7, .7, .7)
+		self.settingsBtn.Icon:SetDesaturated(true)
+		self.settingsBtn.Icon:SetSize(20, 20)
+		self.settingsBtn:SetAlpha(.8)
+		self.settingsBtn:SetScript("OnEnter", function(self)
+			self:SetAlpha(1)
+			self.Icon:SetVertexColor(.9, .9, .9)
+		end)
+		self.settingsBtn:SetScript("OnLeave", function(self)
+			self:SetAlpha(.8)
+			self.Icon:SetVertexColor(.7, .7, .7)
+		end)
+		self.settingsBtn:SetScript("OnMouseDown", function(self) self.Icon:AdjustPointsOffset(1, -1) end)
+		self.settingsBtn:SetScript("OnMouseUp", function(self) self.Icon:AdjustPointsOffset(-1, 1) end)
+
+		self.inset:SetPoint("BOTTOMRIGHT", -6, 28)
+		self.enableAll:SetPoint("BOTTOMLEFT", 8, 6)
+		self.cancel:SetPoint("BOTTOMRIGHT", -16, 6)
+		self.resize:SetPoint("BOTTOMRIGHT", -4, 6)
+	end
 
 	-- SET SIZE & POS
 	local minWidth = 600
@@ -193,7 +221,7 @@ listFrame:SetScript("OnShow", function(self)
 	self.categoriesFilter["rest"] = true
 
 	-- CHARACTER
-	self.charSelect = lsfdd:CreateModernButtonOriginal(self)
+	self.charSelect = self.isMainline and lsfdd:CreateModernButtonOriginal(self) or lsfdd:CreateButtonOriginal(self)
 	self.charSelect:SetPoint("TOPLEFT", 12, -30)
 	self.charSelect:ddSetSelectedText(self.config.usePlayer and self.charName or ALL)
 
@@ -230,6 +258,7 @@ listFrame:SetScript("OnShow", function(self)
 	self.filterBtn = lsfdd:CreateStretchButtonOriginal(self, 90, 26)
 	self.filterBtn:SetPoint("LEFT", self.searchBox, "RIGHT", 2, 0)
 	self.filterBtn:SetText(FILTER)
+	if not self.isMainline then self.filterBtn:ddSetDisplayMode("menuBackdrop") end
 
 	self.filters = {
 		enabled = true,
@@ -455,7 +484,9 @@ function listFrame:getAddonMetric(name, metric)
 	if not C_AddOnProfiler.IsEnabled() then return end
 
 	local addonVal = C_AddOnProfiler.GetAddOnMetric(name, metric)
-	local relativeTotal = self.metrics[metric] and self.metrics[metric] + addonVal or 0
+	local overallVal = self.metrics[metric] or C_AddOnProfiler.GetOverallMetric(metric)
+	local relativeTotal = overallVal + addonVal or 0
+
 	if relativeTotal <= 0 then return end
 
 	return addonVal / relativeTotal * 100
@@ -468,7 +499,7 @@ end
 
 
 function listFrame:updateOverallMetric(fontString, metric)
-	local appVal = C_AddOnProfiler.GetApplicationMetric(metric)
+	local appVal = C_AddOnProfiler.GetApplicationMetric(metric) or 0
 	if appVal <= 0 then
 		fontString:SetText("--")
 		return
@@ -481,7 +512,7 @@ end
 
 
 function listFrame:isProfilerEnabled()
-	return self.config.cpuUpdate and C_AddOnProfiler.IsEnabled()
+	return self.config.cpuUpdate and C_AddOnProfiler.GetApplicationMetric and C_AddOnProfiler.IsEnabled()
 end
 
 
@@ -498,6 +529,7 @@ end
 
 
 function listFrame:onUpdate(elapsed)
+	self.elapsed = elapsed
 	if self.config.cpuUpdate then
 		self.cpuUpdateTimer = self.cpuUpdateTimer - elapsed
 		if self.cpuUpdateTimer <= 0 then
@@ -560,7 +592,7 @@ end
 
 
 do
-	local icon = " "..CreateAtlasMarkup("dropdown-hover-arrow", 10, 10)
+	local icon = " "..CreateAtlasMarkup(C_Texture.GetAtlasInfo("dropdown-hover-arrow") and "dropdown-hover-arrow" or "auctionhouse-ui-sortarrow", 10, 10)
 	local function getOrderIcon(metric)
 		return listFrame.config.cpuSortBy == metric and icon or ""
 	end
@@ -893,7 +925,7 @@ do
 				end
 
 				if security ~= SECURE_PROTECTED and security ~= SECURE then
-					addLineNotEmpty(MEMORY, self:formatMemory(GetAddOnMemoryUsage(name)))
+					addLineNotEmpty(L["Memory Usage"], self:formatMemory(GetAddOnMemoryUsage(name)))
 				end
 			end
 
@@ -907,10 +939,10 @@ do
 
 			GameTooltip:AddLine(" ");
 			if self.childByPIndex[self.tooltipIndex] then
-				GameTooltip:AddLine("|A:newplayertutorial-icon-mouse-leftbutton:0:0|a "..L["Left+Shift with children"])
+				GameTooltip:AddLine(LEFT_MOUSE_ICON..L["Left+Shift with children"])
 			end
-			GameTooltip:AddLine("|A:newplayertutorial-icon-mouse-leftbutton:0:0|a "..L["Left+Alt to lock/unclock"])
-			GameTooltip:AddLine("|A:newplayertutorial-icon-mouse-rightbutton:0:0|a "..L["For more options"])
+			GameTooltip:AddLine(LEFT_MOUSE_ICON..L["Left+Alt to lock/unclock"])
+			GameTooltip:AddLine(RIGHT_MOUSE_ICON..L["Right For more options"])
 		end
 
 		GameTooltip:Show()

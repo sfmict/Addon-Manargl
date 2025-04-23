@@ -7,7 +7,7 @@ listFrame:HookScript("OnShow", function(self)
 	LibStub("LibSFDropDown-1.5"):SetMixin(self.settingsBtn)
 	self.settingsBtn:ddHideWhenButtonHidden()
 	self.settingsBtn:ddSetNoGlobalMouseEvent(true)
-	self.settingsBtn:ddSetDisplayMode("menu")
+	self.settingsBtn:ddSetDisplayMode(self.isMainline and "menu" or "menuBackdrop")
 	self.settingsBtn:SetScript("OnClick", function(self)
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 		self:ddToggle(1, nil, self, -10, 0)
@@ -64,9 +64,11 @@ listFrame:HookScript("OnShow", function(self)
 			info.value = "memUpdate"
 			dd:ddAddButton(info, level)
 
-			info.text = L["CPU Update"]
-			info.value = "cpuUpdate"
-			dd:ddAddButton(info, level)
+			if C_AddOnProfiler.GetApplicationMetric then
+				info.text = L["CPU Update"]
+				info.value = "cpuUpdate"
+				dd:ddAddButton(info, level)
+			end
 
 			dd:ddAddSeparator(level)
 

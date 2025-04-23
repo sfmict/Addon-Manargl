@@ -6,9 +6,10 @@ ns.L = L
 -- TOOLTIP
 L["Author"] = "Author"
 L["Ticks over"] = "Ticks over"
+L["Memory Usage"] = "Memory Usage"
 L["Left+Shift with children"] = "Left+Shift with children"
 L["Left+Alt to lock/unclock"] = "Left+Alt to lock/unclock"
-L["For more options"] = "For more options"
+L["Right For more options"] = "Right For more options"
 -- CONTEXTMENU
 L["Lock addon"] = "Lock addon"
 L["Enalbe with children"] = "Enalbe with children"

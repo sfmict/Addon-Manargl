@@ -25,6 +25,7 @@ listFrame:RegisterEvent("PLAYER_LOGOUT")
 
 listFrame:HookScript("OnShow", function(self)
 	local dd = LibStub("LibSFDropDown-1.5"):CreateStretchButtonOriginal(self, 90, 26)
+	if not self.isMainline then dd:ddSetDisplayMode("menuBackdrop") end
 	self.profileBtn = dd
 	dd:SetPoint("TOPRIGHT", -35, -30)
 	dd:SetText(L["Profiles"])

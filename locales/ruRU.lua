@@ -9,9 +9,10 @@ local L = ns.L
 -- TOOLTIP
 L["Author"] = "Автор"
 L["Ticks over"] = "Тиков более"
-L["Left+Shift with children"] = "Left+Shift с дочерними"
-L["Left+Alt to lock/unclock"] = "Left+Alt заблокировать/разблокировать"
-L["For more options"] = "Больше опций"
+L["Memory Usage"] = "Использовано памяти"
+L["Left+Shift with children"] = "ЛКМ+Shift с дочерними"
+L["Left+Alt to lock/unclock"] = "ЛКМ+Alt заблокировать/разблокировать"
+L["Right For more options"] = "ПКМ для контекстного меню"
 -- CONTEXTMENU
 L["Lock addon"] = "Заблокировать аддон"
 L["Enalbe with children"] = "Вкобчить с дочерними"

@@ -222,11 +222,16 @@
 			</Anchors>
 		</HighlightTexture>
 		<Frames>
-			<CheckButton parentKey="check" registerForClicks="LeftButtonUp, RightButtonUp" inherits="MinimalCheckboxArtTemplate">
+			<CheckButton parentKey="check" registerForClicks="LeftButtonUp, RightButtonUp">
 				<Size x="22" y="22"/>
 				<Anchors>
 					<Anchor point="LEFT" x="14"/>
 				</Anchors>
+				<NormalTexture parentKey="NormalTexture" atlas="checkbox-minimal" useAtlasSize="true"/>
+				<PushedTexture parentKey="PushedTexture" atlas="checkbox-minimal" useAtlasSize="true"/>
+				<HighlightTexture parentKey="HighlightTexture" atlas="checkbox-minimal" useAtlasSize="true" alphaMode="ADD"/>
+				<CheckedTexture parentKey="CheckedTexture" atlas="checkmark-minimal" useAtlasSize="true"/>
+				<DisabledCheckedTexture parentKey="DisabledCheckedTexture" atlas="checkmark-minimal-disabled" useAtlasSize="true"/>
 			</CheckButton>
 			<Button inherits="UIPanelButtonTemplate" text="LOAD_ADDON" hidden="true" parentKey="loadButton">
 				<Size x="100" y="22"/>
