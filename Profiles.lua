@@ -13,7 +13,7 @@ function listFrame:PLAYER_LOGOUT()
 		end
 	end
 	if not curCharProfile then
-		curCharProfile = {name = charName}
+		curCharProfile = {name = charName, addons = {}}
 		self.charProfiles[#self.charProfiles + 1] = curCharProfile
 		sort(self.charProfiles, function(a, b) return a.name < b.name end)
 	end
@@ -27,7 +27,7 @@ listFrame:HookScript("OnShow", function(self)
 	local dd = LibStub("LibSFDropDown-1.5"):CreateStretchButtonOriginal(self, 90, 26)
 	if not self.isMainline then dd:ddSetDisplayMode("menuBackdrop") end
 	self.profileBtn = dd
-	dd:SetPoint("TOPRIGHT", -35, -30)
+	dd:SetPoint("TOPRIGHT", -6, -30)
 	dd:SetText(L["Profiles"])
 	local lastProfileName, profilePopupAction
 
@@ -133,18 +133,19 @@ listFrame:HookScript("OnShow", function(self)
 						end,
 					},
 				}
+				local func = function(btn) self:loadProfileAddons(btn.value) end
 				local remove = function(btn) self:removeProfile(btn.value, self.profiles) end
 
 				local list = {}
 				for i, profile in ipairs(self.profiles) do
 					list[#list + 1] = {
-						keepShownOnClick = true,
 						hasArrow = true,
 						notCheckable = true,
-						text = ("%s |cff808080(%d %s)"):format(profile.name, #profile, ADDONS),
+						text = ("%s |cff808080(%d %s)"):format(profile.name, profile.count, ADDONS),
 						value = profile,
-						widgets = widgets,
+						func = func,
 						remove = remove,
+						widgets = widgets,
 					}
 				end
 
@@ -176,7 +177,7 @@ listFrame:HookScript("OnShow", function(self)
 					local _,_,_, color = GetClassColor(profile.class)
 					list[#list + 1] = {
 						notCheckable = true,
-						text = ("|C%s%s|r |cff808080(%d %s)"):format(color, profile.name, #profile, ADDONS),
+						text = ("|C%s%s|r |cff808080(%d %s)"):format(color, profile.name, profile.count, ADDONS),
 						value = profile,
 						func = func,
 						remove = remove,
@@ -268,10 +269,12 @@ end)
 
 
 function listFrame:saveProfileAddons(profile)
-	for i = 1, #profile do profile[i] = nil end
+	wipe(profile.addons)
+	profile.count = 0
 	for i = 1, C_AddOns.GetNumAddOns() do
 		if C_AddOns.GetAddOnEnableState(i, self.charName) > Enum.AddOnEnableState.None then
-			profile[#profile + 1] = C_AddOns.GetAddOnInfo(i)
+			profile.count = profile.count + 1
+			profile.addons[C_AddOns.GetAddOnInfo(i)] = 1
 		end
 	end
 end
@@ -288,10 +291,8 @@ function listFrame:enableAddonsTree(profile, enabled, context)
 	context = context or {}
 	if context[profile] then return end
 	context[profile] = true
-	for i, addonName in ipairs(profile) do
-		if self.indexByName[addonName] then
-			self:enableAddon(addonName, enabled)
-		end
+	for addonName in next, profile.addons do
+		self:enableAddon(addonName, enabled)
 	end
 	if profile.loadProfiles then
 		for name in next, profile.loadProfiles do
@@ -347,7 +348,7 @@ function listFrame:createProfile()
 					return
 				end
 			end
-			local profile = {name = text}
+			local profile = {name = text, addons = {}}
 			self:saveProfileAddons(profile)
 			self.profiles[#self.profiles + 1] = profile
 			sort(self.profiles, function(a, b) return a.name < b.name end)
@@ -413,4 +414,16 @@ function listFrame:setLoadProfiles(pProfile, cName, enabled)
 			pProfile.loadProfiles = nil
 		end
 	end
+end
+
+
+function listFrame:getProfilesWithAddon(name)
+	local str = ""
+	for i = 1, #self.profiles do
+		local profile = self.profiles[i]
+		if profile.addons[name] then
+			str = str..", "..profile.name
+		end
+	end
+	return str:sub(3)
 end

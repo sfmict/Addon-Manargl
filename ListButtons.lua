@@ -11,59 +11,97 @@ listFrame:HookScript("OnShow", function(self)
 	self.contextMenu:ddSetInitFunc(function(dd, level, index)
 		local info = {}
 		local name, title = C_AddOns.GetAddOnInfo(index)
-		local checked = C_AddOns.GetAddOnEnableState(index, self.charName) > Enum.AddOnEnableState.None
 
-		info.keepShownOnClick = true
-		info.notCheckable = true
-		info.isTitle = true
-		info.text = self.config.showNameInsteadOfTitle and name or title
-		dd:ddAddButton(info, level)
+		if level == 1 then
+			local checked = C_AddOns.GetAddOnEnableState(index, self.charName) > Enum.AddOnEnableState.None
 
-		info.isTitle = nil
-		info.notCheckable = nil
-		info.isNotRadio = true
-		info.text = L["Lock addon"]
-		info.func = function(_,_,_, checked)
-			self.locked[name] = checked
-			local button = self.scrollBox:FindFrameByPredicate(function(btn, node)
-				return node:GetData().index == index
-			end)
-			if button then self:normalInit(button, button:GetElementData()) end
-			dd:ddRefresh(level)
-		end
-		info.checked = self.locked[name]
-		dd:ddAddButton(info, level)
+			info.keepShownOnClick = true
+			info.notCheckable = true
+			info.isTitle = true
+			info.text = self.config.showNameInsteadOfTitle and name or title
+			dd:ddAddButton(info, level)
 
-		info.keepShownOnClick = nil
-		info.notCheckable = true
-		info.disabled = function() return self.locked[name] end
-
-		if self.childByPIndex[index] then
-			info.text = checked and L["Disable with children"] or L["Enalbe with children"]
-			info.func = function()
-				self:enableAddon(name, not checked)
-				self:enableAddonChildren(name, not checked)
-				self:updateList()
-				self:updateReloadButton()
+			info.isTitle = nil
+			info.notCheckable = nil
+			info.isNotRadio = true
+			info.text = L["Lock addon"]
+			info.func = function(_,_,_, checked)
+				self.locked[name] = checked
+				local button = self.scrollBox:FindFrameByPredicate(function(btn, node)
+					return node:GetData().index == index
+				end)
+				if button then self:normalInit(button, button:GetElementData()) end
+				dd:ddRefresh(level)
 			end
+			info.checked = self.locked[name]
+			dd:ddAddButton(info, level)
+
+			info.keepShownOnClick = nil
+			info.notCheckable = true
+			info.disabled = function() return self.locked[name] end
+
+			if self.childByPIndex[index] then
+				info.text = checked and L["Disable with children"] or L["Enalbe with children"]
+				info.func = function()
+					self:enableAddon(name, not checked)
+					self:enableAddonChildren(name, not checked)
+					self:updateList()
+					self:updateReloadButton()
+				end
+				dd:ddAddButton(info, level)
+			end
+
+			if C_AddOns.GetAddOnDependencies(index) then
+				info.text = checked and L["Disable with dependencies"] or L["Enable with dependencies"]
+				info.func = function()
+					self:enableAddon(name, not checked)
+					self:enableAddonDependencies(name, not checked)
+					self:updateList()
+					self:updateReloadButton()
+				end
+				dd:ddAddButton(info, level)
+			end
+
+			info.disabled = nil
+			info.hasArrow = true
+			info.text = L["Enabled in profile"]
+			info.value = index
+			dd:ddAddButton(info, value)
+
+			info.hasArrow = nil
+			info.value = nil
+			info.func = nil
+			info.text = CANCEL
+			dd:ddAddButton(info, level)
+
+		else
+			local list = {}
+
+			local func = function(btn, _,_, checked)
+				local profile = btn.value
+				if checked then
+					profile.count = profile.count + 1
+					profile.addons[name] = 1
+				else
+					profile.count = profile.count - 1
+					profile.addons[name] = nil
+				end
+			end
+
+			for i, profile in ipairs(self.profiles) do
+				list[i] = {
+					keepShownOnClick = true,
+					isNotRadio = true,
+					text = profile.name,
+					value = profile,
+					func = func,
+					checked = profile.addons[name],
+				}
+			end
+
+			info.list = list
 			dd:ddAddButton(info, level)
 		end
-
-		if C_AddOns.GetAddOnDependencies(index) then
-			info.text = checked and L["Disable with dependencies"] or L["Enable with dependencies"]
-			info.func = function()
-				self:enableAddon(name, not checked)
-				self:enableAddonDependencies(name, not checked)
-				self:updateList()
-				self:updateReloadButton()
-			end
-			dd:ddAddButton(info, level)
-		end
-
-		info.disabled = nil
-		info.func = nil
-		info.text = CANCEL
-		dd:ddAddButton(info, level)
 	end)
 
 	self.scrollBox:RegisterCallback(self.scrollBox.Event.OnDataRangeChanged, function()

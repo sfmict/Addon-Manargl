@@ -1,8 +1,8 @@
-## Interface: 110105
+## Interface: 110105, 40402, 11507
 ## Title: Addon Manargl
 ## Author: sfmict
 ## Version: @project-version@
-## IconTexture: 656557
+## IconTexture: Interface\AddOns\AddonMrgl\media\icon
 ## Notes: Addon Manargl mrglwglwlg!
 ## Category-enUS: User Interface
 ## Category-deDE: Benutzerinterface

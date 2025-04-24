@@ -33,10 +33,10 @@
 					<OnClick>self:GetParent():Hide()</OnClick>
 				</Scripts>
 			</Button>
-			<Button parentKey="settingsBtn" mixin="QuestLogSettingsButtonMixin">
+			<Button parentKey="settingsBtn" frameLevel="2501" mixin="QuestLogSettingsButtonMixin">
 				<Size x="15" y="16"/>
 				<Anchors>
-					<Anchor point="TOPRIGHT" x="-12" y="-35"/>
+					<Anchor point="TOPRIGHT" x="-28" y="-4"/>
 				</Anchors>
 				<Layers>
 					<Layer level="ARTWORK">

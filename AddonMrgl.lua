@@ -158,7 +158,7 @@ listFrame:SetScript("OnShow", function(self)
 	end
 
 	-- SET SIZE & POS
-	local minWidth = 600
+	local minWidth = 550
 	local minHeight = 400
 	local maxWidth = UIParent:GetWidth() - 100
 	local maxHeight = UIParent:GetHeight() - 100
@@ -494,7 +494,12 @@ end
 
 
 function listFrame:getAddonMetricPercent(name, metric)
-	return getColorPercent(self:getAddonMetric(name, metric) or 0)
+	local val = self:getAddonMetric(name, metric) or 0
+	if val > .005 then
+		return getColorPercent(val)
+	else
+		return ("%.2f%%"):format(val)
+	end
 end
 
 
@@ -917,11 +922,11 @@ do
 					addLineNotEmpty(L["Average CPU"], self:getAddonMetricPercent(name, Enum.AddOnProfilerMetric.SessionAverageTime))
 					addLineNotEmpty(L["Peak CPU"], self:getAddonMetricPercent(name, Enum.AddOnProfilerMetric.PeakTime))
 					addLineNotEmpty(L["Encounter CPU"], self:getAddonMetricPercent(name, Enum.AddOnProfilerMetric.EncounterAverageTime))
-					addLineNotEmpty(L["Ticks over"].." 5ms", C_AddOnProfiler.GetAddOnMetric(name, Enum.AddOnProfilerMetric.CountTimeOver5Ms))
-					addLineNotEmpty(L["Ticks over"].." 10ms", C_AddOnProfiler.GetAddOnMetric(name, Enum.AddOnProfilerMetric.CountTimeOver10Ms))
-					addLineNotEmpty(L["Ticks over"].." 50ms", C_AddOnProfiler.GetAddOnMetric(name, Enum.AddOnProfilerMetric.CountTimeOver50Ms))
-					addLineNotEmpty(L["Ticks over"].." 100ms", C_AddOnProfiler.GetAddOnMetric(name, Enum.AddOnProfilerMetric.CountTimeOver100Ms))
-					addLineNotEmpty(L["Ticks over"].." 500ms", C_AddOnProfiler.GetAddOnMetric(name, Enum.AddOnProfilerMetric.CountTimeOver500Ms))
+					addLineNotEmpty(L["Ticks over %sms"]:format(5), C_AddOnProfiler.GetAddOnMetric(name, Enum.AddOnProfilerMetric.CountTimeOver5Ms))
+					addLineNotEmpty(L["Ticks over %sms"]:format(10), C_AddOnProfiler.GetAddOnMetric(name, Enum.AddOnProfilerMetric.CountTimeOver10Ms))
+					addLineNotEmpty(L["Ticks over %sms"]:format(50), C_AddOnProfiler.GetAddOnMetric(name, Enum.AddOnProfilerMetric.CountTimeOver50Ms))
+					addLineNotEmpty(L["Ticks over %sms"]:format(100), C_AddOnProfiler.GetAddOnMetric(name, Enum.AddOnProfilerMetric.CountTimeOver100Ms))
+					addLineNotEmpty(L["Ticks over %sms"]:format(500), C_AddOnProfiler.GetAddOnMetric(name, Enum.AddOnProfilerMetric.CountTimeOver500Ms))
 				end
 
 				if security ~= SECURE_PROTECTED and security ~= SECURE then
@@ -931,6 +936,7 @@ do
 
 			GameTooltip:AddLine(self:getAddonDepsString(name), nil, nil, nil, true)
 			addLineNotEmpty(CATEGORIES, C_AddOns.GetAddOnMetadata(name, "Category"))
+			addLineNotEmpty(L["Profiles with addon"], self:getProfilesWithAddon(name))
 
 			if notes then
 				GameTooltip:AddLine(" ")
@@ -1034,7 +1040,6 @@ function listFrame:normalInit(f, node)
 	local enabled = checkboxState > Enum.AddOnEnableState.None
 	local loaded = C_AddOns.IsAddOnLoaded(index)
 	f.loaded = loaded
-	--fprint(name, loadable, reason, checkboxState)
 
 	local titleText = self.config.showNameInsteadOfTitle and name or title
 	if loadable or enabled and (reason == "DEP_DEMAND_LOADED" or reason == "DEMAND_LOADED") then
@@ -1058,6 +1063,11 @@ function listFrame:normalInit(f, node)
 	if self.locked[name] then
 		f.lock:Show()
 		f.check:Hide()
+		if enabled then
+			f.lock:SetVertexColor(1, 78, 0)
+		else
+			f.lock:SetVertexColor(1, 1, 1)
+		end
 	else
 		f.lock:Hide()
 		f.check:Show()

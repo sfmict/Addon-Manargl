@@ -1,0 +1,22 @@
+package-as: AddonMrgl
+
+externals:
+	libs/LibStub: https://repos.curseforge.com/wow/libstub/trunk
+	libs/CallbackHandler-1.0: https://repos.curseforge.com/wow/callbackhandler/trunk/CallbackHandler-1.0
+	libs/LibDataBroker-1.1:
+		site: https://www.curseforge.com/wow/addons/libdatabroker-1-1
+		url: https://github.com/tekkub/libdatabroker-1-1
+	libs/LibDBIcon-1.0: https://repos.curseforge.com/wow/libdbicon-1-0/trunk/LibDBIcon-1.0
+	libs/LibSFDropDown:
+		site: https://www.curseforge.com/wow/addons/libsfdropdown
+		url: https://github.com/sfmict/LibSFDropDown
+		tag: latest
+
+enable-nolib-creation: no
+
+ignore:
+	- .*\.md$
+	- libs/.*\.toc$
+	- libs/LibStub/tests
+	- libs/LibDataBroker-1\.1/README\.textile
+	- libs/LibDBIcon-1\.0/lib\.xml

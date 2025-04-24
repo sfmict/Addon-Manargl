@@ -1,12 +1,16 @@
 local addon = ...
 local listFrame = AddonMgrAddonList
 
+
+local addonToggle = function() listFrame:SetShown(not listFrame:IsShown()) end
+
+
 C_Timer.After(0, function()
 	local ldb_icon = LibStub("LibDataBroker-1.1"):NewDataObject(addon, {
 		type = "launcher",
 		text = addon,
 		icon = C_AddOns.GetAddOnMetadata(addon, "IconTexture"),
-		OnClick = function() listFrame:SetShown(not listFrame:IsShown()) end,
+		OnClick = addonToggle,
 		OnTooltipShow = function(tooltip)
 			local title = C_AddOns.GetAddOnMetadata(addon, "Title")
 			local version  = C_AddOns.GetAddOnMetadata(addon, "Version")
@@ -46,3 +50,7 @@ C_Timer.After(0, function()
 	})
 	LibStub("LibDBIcon-1.0"):Register(addon, ldb_icon, listFrame.db.omb)
 end)
+
+
+SLASH_ADDONMRGL1 = "/addonmrgl"
+SlashCmdList["ADDONMRGL"] = addonToggle

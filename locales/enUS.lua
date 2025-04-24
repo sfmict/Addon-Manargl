@@ -5,8 +5,9 @@ ns.L = L
 
 -- TOOLTIP
 L["Author"] = "Author"
-L["Ticks over"] = "Ticks over"
+L["Ticks over %sms"] = "Ticks over %sms"
 L["Memory Usage"] = "Memory Usage"
+L["Profiles with addon"] = "Profiles with addon"
 L["Left+Shift with children"] = "Left+Shift with children"
 L["Left+Alt to lock/unclock"] = "Left+Alt to lock/unclock"
 L["Right For more options"] = "Right For more options"
@@ -16,6 +17,7 @@ L["Enalbe with children"] = "Enalbe with children"
 L["Disable with children"] = "Disable with children"
 L["Enable with dependencies"] = "Enable with dependencies"
 L["Disable with dependencies"] = "Disable with dependencies"
+L["Enabled in profile"] = "Enabled in profile"
 -- FILTERS
 L["Enabled"] = "Enabled"
 L["Disabled"] = "Disabled"
