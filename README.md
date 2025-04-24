@@ -4,7 +4,7 @@
 
 Convenient manarglement of your addons.
 
-[![Build](https://github.com/sfmict/Addon-Manargl/workflows/Build/badge.svg)](https://github.com/sfmict/Addon-Manargl/releases) [![](http://cf.way2muchnoise.eu/full_369265_downloads.svg)](https://www.curseforge.com/wow/addons/addonmrgl)
+[![Build](https://github.com/sfmict/Addon-Manargl/workflows/Build/badge.svg)](https://github.com/sfmict/Addon-Manargl/releases) [![](https://cf.way2muchnoise.eu/full_1250006_downloads.svg)](https://www.curseforge.com/wow/addons/addonmrgl)
 </div>
 
 ### Features:

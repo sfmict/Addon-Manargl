@@ -43,7 +43,7 @@ C_Timer.After(0, function()
 			tooltip:AddDoubleLine(text, listFrame:formatMemory(totalMem), 1,1,1,1,1,1)
 
 			for i = 1, #topAddons do
-				local name = C_AddOns.GetAddOnInfo(topAddons[i].index, 1,1,1,1,1,1)
+				local name = C_AddOns.GetAddOnInfo(topAddons[i].index)
 				tooltip:AddDoubleLine(name, listFrame:formatMemory(topAddons[i].mem), 1,1,1,1,1,1)
 			end
 		end,

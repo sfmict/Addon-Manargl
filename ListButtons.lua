@@ -63,14 +63,19 @@ listFrame:HookScript("OnShow", function(self)
 			end
 
 			info.disabled = nil
-			info.hasArrow = true
-			info.text = L["Enabled in profile"]
-			info.value = index
-			dd:ddAddButton(info, value)
+			info.func = nil
 
+			if #self.profiles > 0 then
+				info.keepShownOnClick = true
+				info.hasArrow = true
+				info.text = L["Enabled in profile"]
+				info.value = index
+				dd:ddAddButton(info, value)
+			end
+
+			info.keepShownOnClick = nil
 			info.hasArrow = nil
 			info.value = nil
-			info.func = nil
 			info.text = CANCEL
 			dd:ddAddButton(info, level)
 
