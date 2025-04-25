@@ -1,7 +1,7 @@
 local addon, ns = ...
 local L = ns.L
 local listFrame = AddonMgrAddonList
-local C_AddOns, C_AddOnProfiler = C_AddOns, C_AddOnProfiler
+local C_AddOns = C_AddOns
 
 local LEFT_MOUSE_ICON = C_Texture.GetAtlasInfo("newplayertutorial-icon-mouse-leftbutton") and "|A:newplayertutorial-icon-mouse-leftbutton:0:0|a" or ""
 local RIGHT_MOUSE_ICON = C_Texture.GetAtlasInfo("newplayertutorial-icon-mouse-rightbutton") and "|A:newplayertutorial-icon-mouse-rightbutton:0:0|a" or ""
@@ -231,7 +231,7 @@ listFrame:SetScript("OnShow", function(self)
 		local func = function(btn)
 			self.config.usePlayer = btn.value
 			self:setAddonCharacter()
-			self:updateList()
+			self:updateFilters()
 			dd:ddSetSelectedText(btn.text)
 		end
 
@@ -474,95 +474,6 @@ function listFrame:onShow()
 end
 
 
-local function getColorPercent(percent)
-	local color = (100 - math.min(percent, 100)) * 2.55
-	return ("|cffff%.2x%.2x%.2f%%|r"):format(color, color, percent)
-end
-
-
-function listFrame:getAddonMetric(name, metric)
-	if not C_AddOnProfiler.IsEnabled() then return end
-
-	local addonVal = C_AddOnProfiler.GetAddOnMetric(name, metric)
-	local overallVal = self.metrics[metric] or C_AddOnProfiler.GetOverallMetric(metric)
-	local relativeTotal = overallVal + addonVal or 0
-
-	if relativeTotal <= 0 then return end
-
-	return addonVal / relativeTotal * 100
-end
-
-
-function listFrame:getAddonMetricPercent(name, metric)
-	local val = self:getAddonMetric(name, metric) or 0
-	if val > .005 then
-		return getColorPercent(val)
-	else
-		return ("%.2f%%"):format(val)
-	end
-end
-
-
-function listFrame:updateOverallMetric(fontString, metric)
-	local appVal = C_AddOnProfiler.GetApplicationMetric(metric) or 0
-	if appVal <= 0 then
-		fontString:SetText("--")
-		return
-	end
-
-	local overallVal = C_AddOnProfiler.GetOverallMetric(metric)
-	self.metrics[metric] = appVal - overallVal
-	fontString:SetText(getColorPercent(overallVal / appVal * 100))
-end
-
-
-function listFrame:isProfilerEnabled()
-	return self.config.cpuUpdate and C_AddOnProfiler.GetApplicationMetric and C_AddOnProfiler.IsEnabled()
-end
-
-
-function listFrame:updatePerformance()
-	local enabled = self:isProfilerEnabled()
-	self.performance:SetShown(enabled)
-	if not enabled then return end
-
-	self:updateOverallMetric(self.currentCPU.bottomStr, Enum.AddOnProfilerMetric.RecentAverageTime)
-	self:updateOverallMetric(self.averageCPU.bottomStr, Enum.AddOnProfilerMetric.SessionAverageTime)
-	self:updateOverallMetric(self.peakCPU.bottomStr, Enum.AddOnProfilerMetric.PeakTime)
-	self:updateOverallMetric(self.encounterCPU.bottomStr, Enum.AddOnProfilerMetric.EncounterAverageTime)
-end
-
-
-function listFrame:onUpdate(elapsed)
-	self.elapsed = elapsed
-	if self.config.cpuUpdate then
-		self.cpuUpdateTimer = self.cpuUpdateTimer - elapsed
-		if self.cpuUpdateTimer <= 0 then
-			self.cpuUpdateTimer = self.config.cpuUpdate
-			self:updatePerformance()
-			self:updateTooltip()
-
-			if self.config.cpuSortBy then
-				self:sort()
-			else
-				for i, f in ipairs(self.view:GetFrames()) do
-					if f.loaded then self:updateAddonMetrics(f) end
-				end
-			end
-		end
-	end
-
-	if self.config.memUpdate then
-		self.memUpdateTimer = self.memUpdateTimer - elapsed
-		if self.memUpdateTimer <= 0 then
-			self.memUpdateTimer = self.config.memUpdate
-			UpdateAddOnMemoryUsage()
-			self:updateTooltip()
-		end
-	end
-end
-
-
 function listFrame:setAddonCharacter()
 	self.addonCharacter = self.config.usePlayer and self.charName or nil
 end
@@ -616,13 +527,13 @@ function listFrame:sort()
 	local metric, copy
 	if self.config.cpuSortBy then
 		if self.config.cpuSortBy == "current" then
-			metric = Enum.AddOnProfilerMetric.RecentAverageTime
+			metric = self.profilerEnumRecentAverageTime
 		elseif self.config.cpuSortBy == "average" then
-			metric = Enum.AddOnProfilerMetric.SessionAverageTime
+			metric = self.profilerEnumSessionAverageTime
 		elseif self.config.cpuSortBy == "peak" then
-			metric = Enum.AddOnProfilerMetric.PeakTime
+			metric = self.profilerEnumPeakTime
 		elseif self.config.cpuSortBy == "encounter" then
-			metric = Enum.AddOnProfilerMetric.EncounterAverageTime
+			metric = self.profilerEnumEncounterAverageTime
 		end
 		copy = {}
 		for i = 1, #self.sorted do copy[i] = self.sorted[i] end
@@ -696,27 +607,20 @@ end
 
 
 function listFrame:isCollapsed(index)
-	return self.depCollapsed[self.nameByIndex[index]]
+	return self.depCollapsed[self.nameByIndex[index]] and not self.isSearched
 end
 
 
 function listFrame:setListGroup()
-	if self.config.cpuSortBy then
+	if self.config.cpuSortBy or self.config.listGroup == "none" then
 		wipe(self.hasParentByIndex)
 		wipe(self.childByPIndex)
-		self:updateData()
-		return
-	end
-
-	if self.config.listGroup == "dep" then
+	elseif self.config.listGroup == "dep" then
 		self:setChildByDeps()
 	elseif self.config.listGroup == "treeDep" then
 		self:setChildByTreeDeps()
 	elseif self.config.listGroup == "group" then
 		self:setChildByGroup()
-	else
-		wipe(self.hasParentByIndex)
-		wipe(self.childByPIndex)
 	end
 	self:updateData()
 end
@@ -918,15 +822,15 @@ do
 			local loaded = C_AddOns.IsAddOnLoaded(name)
 			if loaded then
 				if self:isProfilerEnabled() then
-					addLineNotEmpty(L["Current CPU"], self:getAddonMetricPercent(name, Enum.AddOnProfilerMetric.RecentAverageTime))
-					addLineNotEmpty(L["Average CPU"], self:getAddonMetricPercent(name, Enum.AddOnProfilerMetric.SessionAverageTime))
-					addLineNotEmpty(L["Peak CPU"], self:getAddonMetricPercent(name, Enum.AddOnProfilerMetric.PeakTime))
-					addLineNotEmpty(L["Encounter CPU"], self:getAddonMetricPercent(name, Enum.AddOnProfilerMetric.EncounterAverageTime))
-					addLineNotEmpty(L["Ticks over %sms"]:format(5), C_AddOnProfiler.GetAddOnMetric(name, Enum.AddOnProfilerMetric.CountTimeOver5Ms))
-					addLineNotEmpty(L["Ticks over %sms"]:format(10), C_AddOnProfiler.GetAddOnMetric(name, Enum.AddOnProfilerMetric.CountTimeOver10Ms))
-					addLineNotEmpty(L["Ticks over %sms"]:format(50), C_AddOnProfiler.GetAddOnMetric(name, Enum.AddOnProfilerMetric.CountTimeOver50Ms))
-					addLineNotEmpty(L["Ticks over %sms"]:format(100), C_AddOnProfiler.GetAddOnMetric(name, Enum.AddOnProfilerMetric.CountTimeOver100Ms))
-					addLineNotEmpty(L["Ticks over %sms"]:format(500), C_AddOnProfiler.GetAddOnMetric(name, Enum.AddOnProfilerMetric.CountTimeOver500Ms))
+					addLineNotEmpty(L["Current CPU"], self:getAddonMetricPercent(name, self.profilerEnumRecentAverageTime))
+					addLineNotEmpty(L["Average CPU"], self:getAddonMetricPercent(name, self.profilerEnumSessionAverageTime))
+					addLineNotEmpty(L["Peak CPU"], self:getAddonMetricPercent(name, self.profilerEnumPeakTime))
+					addLineNotEmpty(L["Encounter CPU"], self:getAddonMetricPercent(name, self.profilerEnumEncounterAverageTime))
+					addLineNotEmpty(L["Ticks over %sms"]:format(5), self:getAddonMetricCount(name, self.profilerEnumCountTimeOver5Ms))
+					addLineNotEmpty(L["Ticks over %sms"]:format(10), self:getAddonMetricCount(name, self.profilerEnumCountTimeOver10Ms))
+					addLineNotEmpty(L["Ticks over %sms"]:format(50), self:getAddonMetricCount(name, self.profilerEnumCountTimeOver50Ms))
+					addLineNotEmpty(L["Ticks over %sms"]:format(100), self:getAddonMetricCount(name, self.profilerEnumCountTimeOver100Ms))
+					addLineNotEmpty(L["Ticks over %sms"]:format(500), self:getAddonMetricCount(name, self.profilerEnumCountTimeOver500Ms))
 				end
 
 				if security ~= SECURE_PROTECTED and security ~= SECURE then
@@ -987,14 +891,13 @@ function listFrame:updateAddonMetrics(f)
 	local name = f.name
 	local str = ""
 	if self:isProfilerEnabled() then
-		str = self.currentStr:format(self:getAddonMetricPercent(name, Enum.AddOnProfilerMetric.RecentAverageTime))
+		str = self.currentStr:format(self:getAddonMetricPercent(name, self.profilerEnumRecentAverageTime))
 		if self.config.cpuSortBy == "average" then
-			str = self.averageStr:format(str, self:getAddonMetricPercent(name, Enum.AddOnProfilerMetric.SessionAverageTime))
+			str = self.averageStr:format(str, self:getAddonMetricPercent(name, self.profilerEnumSessionAverageTime))
 		elseif self.config.cpuSortBy == "peak" then
-			str = self.peakStr:format(str, self:getAddonMetricPercent(name, Enum.AddOnProfilerMetric.PeakTime))
+			str = self.peakStr:format(str, self:getAddonMetricPercent(name, self.profilerEnumPeakTime))
 		elseif self.config.cpuSortBy == "encounter" then
-			local val = self:getAddonMetricPercent(name, Enum.AddOnProfilerMetric.EncounterAverageTime)
-			str = self.encounterStr:format(str, val)
+			str = self.encounterStr:format(str, self:getAddonMetricPercent(name, self.profilerEnumEncounterAverageTime))
 		end
 	end
 	f.status:SetText(str)
@@ -1033,6 +936,7 @@ function listFrame:normalInit(f, node)
 	else
 		f.icon:Hide()
 	end
+	f.select:SetShown(self.selProfileAddons and self.selProfileAddons[name])
 
 	local loadable, reason = C_AddOns.IsAddOnLoadable(index, self.addonCharacter)
 	local checkboxState = C_AddOns.GetAddOnEnableState(index, self.addonCharacter)
@@ -1064,7 +968,7 @@ function listFrame:normalInit(f, node)
 		f.lock:Show()
 		f.check:Hide()
 		if enabled then
-			f.lock:SetVertexColor(1, 78, 0)
+			f.lock:SetVertexColor(1, .78, 0)
 		else
 			f.lock:SetVertexColor(1, 1, 1)
 		end
@@ -1162,6 +1066,7 @@ end
 function listFrame:updateFilters()
 	local text = self.searchBox:GetText():trim():lower()
 	local searchBy = self.config.searchBy
+	self.isSearched = #text ~= 0
 	wipe(self.indexByName)
 	wipe(self.filtred)
 

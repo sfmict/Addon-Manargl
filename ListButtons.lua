@@ -91,6 +91,7 @@ listFrame:HookScript("OnShow", function(self)
 					profile.count = profile.count - 1
 					profile.addons[name] = nil
 				end
+				self:updateList()
 			end
 
 			for i, profile in ipairs(self.profiles) do

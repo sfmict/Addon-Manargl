@@ -186,6 +186,14 @@
 	<Button name="AddonMgrListNormal" registerForClicks="LeftButtonUp, RightButtonUp" mixin="AddonMgrListNormalMixin" virtual="true">
 		<Layers>
 			<Layer level="BACKGROUND">
+				<Texture parentKey="select" atlas="voicechat-channellist-row-highlight" alphaMode="ADD" alpha=".2">
+					<Anchors>
+						<Anchor point="TOPLEFT" y="-2"/>
+						<Anchor point="BOTTOMRIGHT" y="2"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="ARTWORK">
 				<Texture parentKey="lock" file="interface/lfgframe/ui-lfg-icon-lock">
 					<Size x="20" y="20"/>
 					<Anchors>

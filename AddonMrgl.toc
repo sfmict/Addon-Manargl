@@ -16,11 +16,13 @@
 ## Category-zhCN: 用户界面
 ## Category-zhTW: 使用者介面
 ## SavedVariables: AddonMgrDB
+## OptionalDeps: LibStub, CallbackHandler-1.0, LibDataBroker-1.1, LibDBIcon-1.0, LibSFDropDown
 embeds.xml
 locales.xml
 AddonMrgl.xml
 AddonMrgl.lua
 ListButtons.lua
+Profiler.lua
 Profiles.lua
 Settings.lua
 MinimapButton.lua

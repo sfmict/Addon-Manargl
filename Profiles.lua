@@ -213,23 +213,35 @@ listFrame:HookScript("OnShow", function(self)
 			dd:ddAddButton(info, level)
 
 			info.text = L["Save"]
-			info.value = value
 			info.func = function(btn) self:rewriteProfileAddons(btn.value) end
 			dd:ddAddButton(info, level)
 
 			info.text = L["Enable Addons"]
-			info.value = value
 			info.func = function(btn) self:enableProfileAddons(btn.value) end
 			dd:ddAddButton(info, level)
 
 			info.text = L["Disable Addons"]
-			info.value = value
 			info.func = function(btn) self:disableProfileAddons(btn.value) end
 			dd:ddAddButton(info, level)
 
 			dd:ddAddSpace(level)
 
+			info.notCheckable = nil
+			info.keepShownOnClick = true
+			info.isNotRadio = true
+			info.text = L["Highlight Addons"]
+			info.value = value.addons
+			info.func = function(btn, _,_, checked)
+				self.selProfileAddons = checked and btn.value or nil
+				self:updateList()
+			end
+			info.checked = self.selProfileAddons == value.addons
+			dd:ddAddButton(info, level)
+
+			dd:ddAddSpace(level)
+
 			info.func = nil
+			info.notCheckable = true
 			info.hasArrow = true
 			info.text = L["Also load profiles"]
 			info.value = value
@@ -311,7 +323,7 @@ function listFrame:loadProfileAddons(profile)
 	StaticPopup_Show(self.addonName.."CUSTOM_OK_CANCEL", L["Load %s profile?"]:format(NORMAL_FONT_COLOR:WrapTextInColorCode(profile.name)), nil, function()
 		for i = 1, C_AddOns.GetNumAddOns() do self:enableAddon(self.nameByIndex[i], false) end
 		self:enableAddonsTree(profile, true)
-		self:updateList()
+		self:updateFilters()
 		self:updateReloadButton()
 	end)
 end
@@ -320,7 +332,7 @@ end
 function listFrame:enableProfileAddons(profile)
 	StaticPopup_Show(self.addonName.."CUSTOM_OK_CANCEL", L["Enable addons from %s profile?"]:format(NORMAL_FONT_COLOR:WrapTextInColorCode(profile.name)), nil, function()
 		self:enableAddonsTree(profile, true)
-		self:updateList()
+		self:updateFilters()
 		self:updateReloadButton()
 	end)
 end
@@ -329,7 +341,7 @@ end
 function listFrame:disableProfileAddons(profile)
 	StaticPopup_Show(self.addonName.."CUSTOM_OK_CANCEL", L["Disable addons from %s profile?"]:format(NORMAL_FONT_COLOR:WrapTextInColorCode(profile.name)), nil, function()
 		self:enableAddonsTree(profile, false)
-		self:updateList()
+		self:updateFilters()
 		self:updateReloadButton()
 	end)
 end
@@ -390,6 +402,10 @@ function listFrame:removeProfile(removeProfile, profiles)
 		for i, profile in ipairs(profiles) do
 			if profile == removeProfile then
 				tremove(profiles, i)
+				if self.selProfileAddons == removeProfile.addons then
+					self.selProfileAddons = nil
+					self:updateList()
+				end
 				break
 			end
 		end
