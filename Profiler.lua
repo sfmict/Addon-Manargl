@@ -45,6 +45,11 @@ function listFrame:getAddonMetricPercent(name, metric)
 end
 
 
+function listFrame:getAddonMetricCount(name, metric)
+	return ProfilerGetAddOnMetric(name, metric)
+end
+
+
 function listFrame:updateOverallMetric(fontString, metric)
 	local appVal = ProfilerGetApplicationMetric(metric) or 0
 	if appVal <= 0 then
@@ -75,8 +80,24 @@ function listFrame:updatePerformance()
 end
 
 
+function listFrame:updateAddonMetrics(f)
+	local name = f.name
+	local str = ""
+	if self:isProfilerEnabled() then
+		str = self.currentStr:format(self:getAddonMetricPercent(name, self.profilerEnumRecentAverageTime))
+		if self.config.cpuSortBy == "average" then
+			str = self.averageStr:format(str, self:getAddonMetricPercent(name, self.profilerEnumSessionAverageTime))
+		elseif self.config.cpuSortBy == "peak" then
+			str = self.peakStr:format(str, self:getAddonMetricPercent(name, self.profilerEnumPeakTime))
+		elseif self.config.cpuSortBy == "encounter" then
+			str = self.encounterStr:format(str, self:getAddonMetricPercent(name, self.profilerEnumEncounterAverageTime))
+		end
+	end
+	f.status:SetText(str)
+end
+
+
 function listFrame:onUpdate(elapsed)
-	self.elapsed = elapsed
 	if self.config.cpuUpdate then
 		self.cpuUpdateTimer = self.cpuUpdateTimer - elapsed
 		if self.cpuUpdateTimer <= 0 then
@@ -102,9 +123,4 @@ function listFrame:onUpdate(elapsed)
 			self:updateTooltip()
 		end
 	end
-end
-
-
-function listFrame:getAddonMetricCount(name, metric)
-	return ProfilerGetAddOnMetric(name, metric)
 end

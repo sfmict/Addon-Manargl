@@ -221,7 +221,7 @@ listFrame:SetScript("OnShow", function(self)
 	self.categoriesFilter["rest"] = true
 
 	-- CHARACTER
-	self.charSelect = self.isMainline and lsfdd:CreateModernButtonOriginal(self) or lsfdd:CreateButtonOriginal(self)
+	self.charSelect = self.isMainline and lsfdd:CreateModernButton(self) or lsfdd:CreateButton(self)
 	self.charSelect:SetPoint("TOPLEFT", 12, -30)
 	self.charSelect:ddSetSelectedText(self.config.usePlayer and self.charName or ALL)
 
@@ -255,7 +255,7 @@ listFrame:SetScript("OnShow", function(self)
 	self.searchBox:HookScript("OnTextChanged", function(self) self:GetParent():updateFilters() end)
 
 	-- FILTER
-	self.filterBtn = lsfdd:CreateStretchButtonOriginal(self, 90, 26)
+	self.filterBtn = lsfdd:CreateStretchButton(self, 90, 26)
 	self.filterBtn:SetPoint("LEFT", self.searchBox, "RIGHT", 2, 0)
 	self.filterBtn:SetText(FILTER)
 	if not self.isMainline then self.filterBtn:ddSetDisplayMode("menuBackdrop") end
@@ -781,11 +781,15 @@ function listFrame:getAddonDepsString(name, reason)
 end
 
 
-function listFrame:formatMemory(mem)
-	if mem >= 1024 then
-		return ("%.2f MB"):format(mem / 1024)
-	else
-		return ("%.2f KB"):format(mem)
+do
+	local MB_MEM = L["%.2f MB"]
+	local KB_MEM = L["%.2f KB"]
+	function listFrame:formatMemory(mem)
+		if mem >= 1024 then
+			return MB_MEM:format(mem / 1024)
+		else
+			return KB_MEM:format(mem)
+		end
 	end
 end
 
@@ -887,23 +891,6 @@ function listFrame:updateReloadButton()
 end
 
 
-function listFrame:updateAddonMetrics(f)
-	local name = f.name
-	local str = ""
-	if self:isProfilerEnabled() then
-		str = self.currentStr:format(self:getAddonMetricPercent(name, self.profilerEnumRecentAverageTime))
-		if self.config.cpuSortBy == "average" then
-			str = self.averageStr:format(str, self:getAddonMetricPercent(name, self.profilerEnumSessionAverageTime))
-		elseif self.config.cpuSortBy == "peak" then
-			str = self.peakStr:format(str, self:getAddonMetricPercent(name, self.profilerEnumPeakTime))
-		elseif self.config.cpuSortBy == "encounter" then
-			str = self.encounterStr:format(str, self:getAddonMetricPercent(name, self.profilerEnumEncounterAverageTime))
-		end
-	end
-	f.status:SetText(str)
-end
-
-
 function listFrame:isAddonLoadOnDemand(index)
 	local deps = {C_AddOns.GetAddOnDependencies(index)}
 	for i = 1, #deps do
@@ -979,15 +966,15 @@ function listFrame:normalInit(f, node)
 		if enabled then
 			if checkboxState ~= Enum.AddOnEnableState.All then
 				if charCheckboxState > Enum.AddOnEnableState.None then
-					f.check.CheckedTexture:SetVertexColor(0,1,0)
 					f.check.CheckedTexture:SetDesaturated(false)
+					f.check.CheckedTexture:SetVertexColor(0,1,0)
 				else
-					f.check.CheckedTexture:SetVertexColor(1,1,1)
 					f.check.CheckedTexture:SetDesaturated(true)
+					f.check.CheckedTexture:SetVertexColor(1,1,1)
 				end
 			else
-				f.check.CheckedTexture:SetVertexColor(1,1,1)
 				f.check.CheckedTexture:SetDesaturated(false)
+				f.check.CheckedTexture:SetVertexColor(1,1,1)
 			end
 		end
 	end

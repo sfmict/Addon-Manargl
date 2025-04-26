@@ -24,7 +24,7 @@ listFrame:RegisterEvent("PLAYER_LOGOUT")
 
 
 listFrame:HookScript("OnShow", function(self)
-	local dd = LibStub("LibSFDropDown-1.5"):CreateStretchButtonOriginal(self, 90, 26)
+	local dd = LibStub("LibSFDropDown-1.5"):CreateStretchButton(self, 90, 26)
 	if not self.isMainline then dd:ddSetDisplayMode("menuBackdrop") end
 	self.profileBtn = dd
 	dd:SetPoint("TOPRIGHT", -6, -30)
@@ -284,7 +284,7 @@ function listFrame:saveProfileAddons(profile)
 	wipe(profile.addons)
 	profile.count = 0
 	for i = 1, C_AddOns.GetNumAddOns() do
-		if C_AddOns.GetAddOnEnableState(i, self.charName) > Enum.AddOnEnableState.None then
+		if C_AddOns.GetAddOnEnableState(i, self.addonCharacter) > Enum.AddOnEnableState.None then
 			profile.count = profile.count + 1
 			profile.addons[C_AddOns.GetAddOnInfo(i)] = 1
 		end
@@ -295,6 +295,7 @@ end
 function listFrame:rewriteProfileAddons(profile)
 	StaticPopup_Show(self.addonName.."CUSTOM_OK_CANCEL", L["Rewrite addons to %s profile?"]:format(NORMAL_FONT_COLOR:WrapTextInColorCode(profile.name)), nil, function()
 		self:saveProfileAddons(profile)
+		self:updateList()
 	end)
 end
 

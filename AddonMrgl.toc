@@ -16,7 +16,7 @@
 ## Category-zhCN: 用户界面
 ## Category-zhTW: 使用者介面
 ## SavedVariables: AddonMgrDB
-## OptionalDeps: LibStub, CallbackHandler-1.0, LibDataBroker-1.1, LibDBIcon-1.0, LibSFDropDown
+## OptionalDeps: LibStub, CallbackHandler-1.0, LibDataBroker-1.1, LibDBIcon-1.0, LibSFDropDown, ElvUI
 embeds.xml
 locales.xml
 AddonMrgl.xml
@@ -26,3 +26,4 @@ Profiler.lua
 Profiles.lua
 Settings.lua
 MinimapButton.lua
+skins\ElvUI.lua

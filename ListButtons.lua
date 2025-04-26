@@ -186,10 +186,6 @@ end
 AddonMgrListParentCategoryMixin = {}
 
 
-function AddonMgrListParentCategoryMixin:onLoad()
-end
-
-
 function AddonMgrListParentCategoryMixin:onClick()
 	local collapsed = self.node:ToggleCollapsed(TreeDataProviderConstants.RetainChildCollapse, TreeDataProviderConstants.DoInvalidation)
 	listFrame:setCollapsed(self.node:GetData().index, collapsed)

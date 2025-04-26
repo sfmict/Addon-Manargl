@@ -270,7 +270,6 @@
 				<PushedTexture parentKey="pushed" atlas="bag-arrow"/>
 				<HighlightTexture parentKey="highlight" alpha="0.4" alphaMode="ADD" atlas="bag-arrow"/>
 				<Scripts>
-					<OnLoad method="onLoad"/>
 					<OnClick method="onClick"/>
 				</Scripts>
 			</Button>
