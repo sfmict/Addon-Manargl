@@ -1,12 +1,12 @@
 if not C_AddOns.IsAddOnLoaded("ElvUI") then return end
 local E = ElvUI[1]
-if E.private.skins.blizzard.misc ~= true then return end
+if not (E.private.skins.blizzard.enable and E.private.skins.blizzard.addonManager) then return end
 local S = E:GetModule("Skins")
 
 
 local function setCheckColor(t, r)
 	if r == 1 and not t:IsDesaturated() then
-		t:dSetVertexColor(unpack(E.media.rgbvaluecolor))
+		t:dSetVertexColor(1, .8, .1)
 	end
 end
 
@@ -46,7 +46,7 @@ AddonMgrAddonList:HookScript("OnShow", function(self)
 	S:HandleButton(self.disableAll)
 	self.disableAll:SetPoint("LEFT", self.enableAll, "RIGHT", 4, 0)
 	S:HandleButton(self.cancel)
-	self.cancel:SetPoint("BOTTOMRIGHT", -20, 6)
+	self.cancel:SetPoint("BOTTOMRIGHT", -20, self.isMainline and 4 or 6)
 	S:HandleButton(self.okay)
 	self.okay:SetPoint("RIGHT", self.cancel, "LEFT", -4, 0)
 	hooksecurefunc(self, "normalInit", btnInit)

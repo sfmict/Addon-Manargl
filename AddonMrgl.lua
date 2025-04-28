@@ -12,6 +12,7 @@ local SECURE = "SECURE"
 
 listFrame:SetScript("OnEvent", function(self, event, ...) self[event](self, ...) end)
 listFrame:RegisterEvent("ADDON_LOADED")
+listFrame:RegisterEvent("UI_SCALE_CHANGED")
 
 
 function listFrame:ADDON_LOADED(addonName)
@@ -97,9 +98,15 @@ function listFrame:ADDON_LOADED(addonName)
 				end
 			end
 		end)
-	elseif self.dataProvider and self.indexByName[addonName] then
-		self:updateData()
+	elseif self.dataProvider and self.indexByName[addonName] and self:IsShown() then
+		self:sort()
 	end
+end
+
+
+function listFrame:UI_SCALE_CHANGED()
+	if not self.addonName then return end
+	self.config.posX, self.config.posY = self:GetCenter()
 end
 
 
@@ -440,6 +447,9 @@ listFrame:SetScript("OnShow", function(self)
 	self.filtred = {}
 	self.metrics = {}
 
+	-- HOOKS
+	hooksecurefunc(UIParent, "SetScale", function() self:UI_SCALE_CHANGED() end)
+
 	-- INIT
 	self:updatePerformance()
 	self:setAddonCharacter()
@@ -588,11 +598,7 @@ function listFrame:sort()
 		end
 		if continue then
 			for i, f in ipairs(self.view:GetFrames()) do
-				if f.loaded then
-					self:updateAddonMetrics(f)
-				else
-					break
-				end
+				if f.loaded then self:updateAddonMetrics(f) end
 			end
 			return
 		end
@@ -607,29 +613,29 @@ end
 
 
 function listFrame:isCollapsed(index)
-	return self.depCollapsed[self.nameByIndex[index]] and not self.isSearched
+	return self.depCollapsed[self.nameByIndex[index]] and self.notSearched
 end
 
 
 function listFrame:setListGroup()
-	if self.config.cpuSortBy or self.config.listGroup == "none" then
-		wipe(self.hasParentByIndex)
-		wipe(self.childByPIndex)
-	elseif self.config.listGroup == "dep" then
+	wipe(self.hasParentByIndex)
+	wipe(self.childByPIndex)
+
+	if not self.config.cpuSortBy and self.config.listGroup ~= "none" then
+		if self.config.listGroup == "dep" then
 		self:setChildByDeps()
-	elseif self.config.listGroup == "treeDep" then
-		self:setChildByTreeDeps()
-	elseif self.config.listGroup == "group" then
-		self:setChildByGroup()
+		elseif self.config.listGroup == "treeDep" then
+			self:setChildByTreeDeps()
+		elseif self.config.listGroup == "group" then
+			self:setChildByGroup()
+		end
 	end
+
 	self:updateData()
 end
 
 
 function listFrame:setChildByDeps()
-	wipe(self.hasParentByIndex)
-	wipe(self.childByPIndex)
-
 	local function addMaxParents(index, pList)
 		if self.circular[index] then return end
 		local deps = {C_AddOns.GetAddOnDependencies(index)}
@@ -665,9 +671,6 @@ end
 
 
 function listFrame:setChildByTreeDeps()
-	wipe(self.hasParentByIndex)
-	wipe(self.childByPIndex)
-
 	local function checkDeps(dIndex, pIndex, list)
 		if self.circular[pIndex] then return false end
 		for i = 1, #list do
@@ -676,10 +679,8 @@ function listFrame:setChildByTreeDeps()
 				local deps = {C_AddOns.GetAddOnDependencies(list[i])}
 				for j = 1, #deps do
 					local depIndex = self.indexByName[deps[j]]
-					if depIndex then
-						if dIndex == depIndex or not checkDeps(dIndex, index, deps) then
-							return false
-						end
+					if depIndex and (dIndex == depIndex or not checkDeps(dIndex, index, deps)) then
+						return false
 					end
 				end
 			end
@@ -692,12 +693,10 @@ function listFrame:setChildByTreeDeps()
 		local deps = {C_AddOns.GetAddOnDependencies(index)}
 		for j = 1, #deps do
 			local depIndex = self.indexByName[deps[j]]
-			if depIndex then
-				if checkDeps(depIndex, index, deps) then
-					self.hasParentByIndex[index] = true
-					self.childByPIndex[depIndex] = self.childByPIndex[depIndex] or {}
-					tinsert(self.childByPIndex[depIndex], index)
-				end
+			if depIndex and checkDeps(depIndex, index, deps) then
+				self.hasParentByIndex[index] = true
+				self.childByPIndex[depIndex] = self.childByPIndex[depIndex] or {}
+				tinsert(self.childByPIndex[depIndex], index)
 			end
 		end
 	end
@@ -705,9 +704,6 @@ end
 
 
 function listFrame:setChildByGroup()
-	wipe(self.hasParentByIndex)
-	wipe(self.childByPIndex)
-
 	for i = 1, #self.filtred do
 		local index = self.filtred[i]
 		local name = C_AddOns.GetAddOnInfo(index)
@@ -781,15 +777,11 @@ function listFrame:getAddonDepsString(name, reason)
 end
 
 
-do
-	local MB_MEM = L["%.2f MB"]
-	local KB_MEM = L["%.2f KB"]
-	function listFrame:formatMemory(mem)
-		if mem >= 1024 then
-			return MB_MEM:format(mem / 1024)
-		else
-			return KB_MEM:format(mem)
-		end
+function listFrame:formatMemory(mem)
+	if mem >= 1024 then
+		return L["%.2f MB"]:format(mem / 1024)
+	else
+		return L["%.2f KB"]:format(mem)
 	end
 end
 
@@ -903,11 +895,12 @@ end
 function listFrame:normalInit(f, node)
 	local index = node:GetData().index
 	local name, title, notes, _,_, security, updateAvailable = C_AddOns.GetAddOnInfo(index)
-	local iconTexture = C_AddOns.GetAddOnMetadata(index, "IconTexture")
-	local iconAtlas = C_AddOns.GetAddOnMetadata(index, "IconAtlas")
 	f.name = name
 
 	if self.config.showIcon then
+		local iconTexture = C_AddOns.GetAddOnMetadata(index, "IconTexture")
+		local iconAtlas = C_AddOns.GetAddOnMetadata(index, "IconAtlas")
+
 		if not iconTexture and not iconAtlas then
 			iconTexture = self.config.showNoIcon and [[Interface\ICONS\INV_Misc_QuestionMark]]
 		end
@@ -919,6 +912,7 @@ function listFrame:normalInit(f, node)
 		else
 			f.icon:SetTexture()
 		end
+
 		f.icon:Show()
 	else
 		f.icon:Hide()
@@ -1053,7 +1047,8 @@ end
 function listFrame:updateFilters()
 	local text = self.searchBox:GetText():trim():lower()
 	local searchBy = self.config.searchBy
-	self.isSearched = #text ~= 0
+	local notSearched = #text == 0
+	self.notSearched = notSearched
 	wipe(self.indexByName)
 	wipe(self.filtred)
 
@@ -1067,12 +1062,12 @@ function listFrame:updateFilters()
 		local enabled = loadable or reason == "DEMAND_LOADED"
 
 		if (enabled and self.filters.enabled or not enabled and self.filters.disabled)
-		and (#text == 0
+		and self.categoriesFilter[category or "rest"]
+		and (notSearched
 			or searchBy.name and name:lower():find(text, 1, true)
 			or searchBy.title and title:find(text, 1, true)
 			or searchBy.author and author and author:lower():find(text, 1, true)
 			or searchBy.category and category and category:lower():find(text, 1, true))
-		and self.categoriesFilter[category or "rest"]
 		then
 			self.indexByName[name] = index
 			self.filtred[#self.filtred + 1] = index
