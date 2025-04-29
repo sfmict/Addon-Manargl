@@ -456,8 +456,8 @@ listFrame:SetScript("OnShow", function(self)
 	self:setAddonCharacter()
 	self:updateCpuButtons()
 	UpdateAddOnMemoryUsage()
-	self.memUpdateTimer = self.config.memUpdate
-	self.cpuUpdateTimer = self.config.cpuUpdate
+	self.uTimer = .1
+	self.syncCounter = 0
 	self:SetScript("OnUpdate", self.onUpdate)
 end)
 

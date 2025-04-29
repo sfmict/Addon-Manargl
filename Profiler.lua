@@ -99,29 +99,30 @@ end
 
 
 function listFrame:onUpdate(elapsed)
-	if self.config.cpuUpdate then
-		self.cpuUpdateTimer = self.cpuUpdateTimer - elapsed
-		if self.cpuUpdateTimer <= 0 then
-			self.cpuUpdateTimer = self.config.cpuUpdate
-			self:updatePerformance()
-			self:updateTooltip()
+	self.uTimer = self.uTimer - elapsed
+	if self.uTimer > 0 then return end
+	self.uTimer = .1
+	self.syncCounter = self.syncCounter + 1
+	local timer = self.syncCounter * self.uTimer
+	local needUpdate = false
 
-			if self.config.cpuSortBy then
-				self:sort()
-			else
-				for i, f in ipairs(self.view:GetFrames()) do
-					if f.loaded then self:updateAddonMetrics(f) end
-				end
+	if self.config.memUpdate and timer % self.config.memUpdate == 0 then
+		UpdateAddOnMemoryUsage()
+		needUpdate = true
+	end
+
+	if self.config.cpuUpdate and timer % self.config.cpuUpdate == 0 then
+		self:updatePerformance()
+		needUpdate = true
+
+		if self.config.cpuSortBy then
+			self:sort()
+		else
+			for i, f in ipairs(self.view:GetFrames()) do
+				if f.loaded then self:updateAddonMetrics(f) end
 			end
 		end
 	end
 
-	if self.config.memUpdate then
-		self.memUpdateTimer = self.memUpdateTimer - elapsed
-		if self.memUpdateTimer <= 0 then
-			self.memUpdateTimer = self.config.memUpdate
-			UpdateAddOnMemoryUsage()
-			self:updateTooltip()
-		end
-	end
+	if needUpdate then self:updateTooltip() end
 end
