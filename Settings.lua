@@ -68,6 +68,10 @@ listFrame:HookScript("OnShow", function(self)
 				info.text = L["CPU Update"]
 				info.value = "cpuUpdate"
 				dd:ddAddButton(info, level)
+
+				info.text = L["CPU Accuracy"]
+				info.value = "cpuAccuracy"
+				dd:ddAddButton(info, level)
 			end
 
 			dd:ddAddSeparator(level)
@@ -245,6 +249,25 @@ listFrame:HookScript("OnShow", function(self)
 			info.text = L["%s seconds"]:format(5)
 			info.value = 5
 			dd:ddAddButton(info, level)
+
+		elseif value == "cpuAccuracy" then
+			info.keepShownOnClick = true
+			info.disabled = not C_AddOnProfiler.IsEnabled()
+
+			info.func = function(btn)
+				self.config.cpuAccuracy = btn.value
+				self:setCpuAccuracyStr()
+				self:updatePerformance()
+				self:updateList()
+				dd:ddRefresh(level)
+			end
+			info.checked = function(btn) return btn.value == self.config.cpuAccuracy end
+
+			for i = 1, 4 do
+				info.text = tostring(1 / 10^i)
+				info.value = i
+				dd:ddAddButton(info, level)
+			end
 
 		elseif value == "listGroup" then
 			info.keepShownOnClick = true

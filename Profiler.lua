@@ -1,4 +1,4 @@
-local listFrame = AddonMgrAddonList
+local listFrame, accuracyColorStr = AddonMgrAddonList
 local ProfilerIsEnabled = C_AddOnProfiler.IsEnabled
 local ProfilerGetApplicationMetric = C_AddOnProfiler.GetApplicationMetric
 local ProfilerGetAddOnMetric = C_AddOnProfiler.GetAddOnMetric
@@ -18,29 +18,32 @@ listFrame.profilerEnumCountTimeOver500Ms = Enum.AddOnProfilerMetric.CountTimeOve
 
 local function getColorPercent(percent)
 	local color = (100 - math.min(percent, 100)) * 2.55
-	return ("|cffff%.2x%.2x%.2f%%|r"):format(color, color, percent)
+	return accuracyColorStr:format(color, color, percent)
+end
+
+
+function listFrame:setCpuAccuracyStr()
+	accuracyColorStr = "|cffff%.2x%.2x%."..self.config.cpuAccuracy.."f%%|r"
+	self.accuracyZeroStr = ("%."..self.config.cpuAccuracy.."f%%"):format(0)
+	self.accuracyDelta = .5 / 10^self.config.cpuAccuracy
 end
 
 
 function listFrame:getAddonMetric(name, metric)
-	if not ProfilerIsEnabled() then return end
-
 	local addonVal = ProfilerGetAddOnMetric(name, metric)
-	local overallVal = self.metrics[metric] or 0
-	local relativeTotal = overallVal + addonVal or 0
+	local appVal = ProfilerGetApplicationMetric(metric)
 
-	if relativeTotal <= 0 then return end
-
-	return addonVal / relativeTotal * 100
+	if appVal <= 0 then return end
+	return addonVal / appVal * 100
 end
 
 
 function listFrame:getAddonMetricPercent(name, metric)
 	local val = self:getAddonMetric(name, metric) or 0
-	if val > .005 then
-		return getColorPercent(val)
+	if val < self.accuracyDelta then
+		return self.accuracyZeroStr
 	else
-		return ("%.2f%%"):format(val)
+		return getColorPercent(val)
 	end
 end
 
@@ -51,14 +54,12 @@ end
 
 
 function listFrame:updateOverallMetric(fontString, metric)
-	local appVal = ProfilerGetApplicationMetric(metric) or 0
+	local appVal = ProfilerGetApplicationMetric(metric)
 	if appVal <= 0 then
 		fontString:SetText("--")
 		return
 	end
-
 	local overallVal = ProfilerGetOverallMetric(metric)
-	self.metrics[metric] = appVal - overallVal
 	fontString:SetText(getColorPercent(overallVal / appVal * 100))
 end
 

@@ -31,6 +31,7 @@ function listFrame:ADDON_LOADED(addonName)
 		self.config.sortBy = self.config.sortBy or "name"
 		if self.config.memUpdate == nil then self.config.memUpdate = 30 end
 		if self.config.cpuUpdate == nil then self.config.cpuUpdate = 1 end
+		if self.config.cpuAccuracy == nil then self.config.cpuAccuracy = 2 end
 		if self.config.replaceAddonButton == nil then self.config.replaceAddonButton = true end
 		if self.config.usePlayer == nil then self.config.usePlayer = true end
 		if self.config.showIcon == nil then self.config.showIcon = true end
@@ -445,12 +446,12 @@ listFrame:SetScript("OnShow", function(self)
 	self.hasParentByIndex = {}
 	self.childByPIndex = {}
 	self.filtred = {}
-	self.metrics = {}
 
 	-- HOOKS
 	hooksecurefunc(UIParent, "SetScale", function() self:UI_SCALE_CHANGED() end)
 
 	-- INIT
+	self:setCpuAccuracyStr()
 	self:updatePerformance()
 	self:setAddonCharacter()
 	self:updateCpuButtons()
