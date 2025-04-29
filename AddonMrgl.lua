@@ -100,6 +100,7 @@ function listFrame:ADDON_LOADED(addonName)
 			end
 		end)
 	elseif self.dataProvider and self.indexByName[addonName] and self:IsShown() then
+		UpdateAddOnMemoryUsage()
 		self:sort()
 	end
 end
@@ -590,19 +591,16 @@ function listFrame:sort()
 	end)
 
 	if self.config.cpuSortBy then
-		local continue = true
 		for i = 1, #self.sorted do
 			if self.sorted[i] ~= copy[i] then
-				continue = false
-				break
+				self:updateFilters()
+				return
 			end
 		end
-		if continue then
-			for i, f in ipairs(self.view:GetFrames()) do
-				if f.loaded then self:updateAddonMetrics(f) end
-			end
-			return
+		for i, f in ipairs(self.view:GetFrames()) do
+			if f.loaded then self:updateAddonMetrics(f) end
 		end
+		return
 	end
 	self:updateFilters()
 end
@@ -862,7 +860,7 @@ function listFrame:hasAnyChanges()
 		local enabled = C_AddOns.GetAddOnEnableState(i, self.charName) > Enum.AddOnEnableState.None
 		local loadable, reason = C_AddOns.IsAddOnLoadable(i, self.charName)
 
-		if (enabled ~= self.startStatus[i] and reason ~= "DEP_DISABLED"
+		if (enabled ~= self.startStatus[i] and (reason == "" or reason == "DISABLED")
 			or reason ~= "INTERFACE_VERSION" and self.outOfDateIndexes[i]
 			or reason == "INTERFACE_VERSION" and not self.outOfDateIndexes[i])
 		and (enabled or C_AddOns.IsAddOnLoaded(i)) then
@@ -987,8 +985,7 @@ function listFrame:normalInit(f, node)
 	else
 		f.loadButton:Hide()
 		f.status:Show()
-
-		if (charCheckboxState > Enum.AddOnEnableState.None ~= self.startStatus[index] and reason ~= "DEP_DISABLED"
+		if (charCheckboxState > Enum.AddOnEnableState.None ~= self.startStatus[index] and (reason == "" or reason == "DISABLED")
 			or reason ~= "INTERFACE_VERSION" and self.outOfDateIndexes[index]
 			or reason == "INTERFACE_VERSION" and not self.outOfDateIndexes[index])
 		and (charCheckboxState > Enum.AddOnEnableState.None or loaded) then
@@ -1056,8 +1053,7 @@ function listFrame:updateFilters()
 	for i = 1, #self.sorted do
 		local index = self.sorted[i]
 		local name = self.nameByIndex[index]
-		local title = self.titleByIndex[index]
-		local author = C_AddOns.GetAddOnMetadata(index, "Author")
+		local author = searchBy.author and C_AddOns.GetAddOnMetadata(index, "Author")
 		local category = C_AddOns.GetAddOnMetadata(index, "Category")
 		local loadable, reason = C_AddOns.IsAddOnLoadable(index, self.addonCharacter)
 		local enabled = loadable or reason == "DEMAND_LOADED"
@@ -1066,8 +1062,8 @@ function listFrame:updateFilters()
 		and self.categoriesFilter[category or "rest"]
 		and (notSearched
 			or searchBy.name and name:lower():find(text, 1, true)
-			or searchBy.title and title:find(text, 1, true)
-			or searchBy.author and author and author:lower():find(text, 1, true)
+			or searchBy.title and self.titleByIndex[index]:find(text, 1, true)
+			or author and author:lower():find(text, 1, true)
 			or searchBy.category and category and category:lower():find(text, 1, true))
 		then
 			self.indexByName[name] = index

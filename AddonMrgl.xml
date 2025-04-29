@@ -259,7 +259,7 @@
 		</Scripts>
 	</Button>
 
-	<Button name="AddonMgrListParent" inherits="AddonMgrListNormal" virtual="true">
+	<Button name="AddonMgrListParent" registerForClicks="LeftButtonUp, RightButtonUp, MiddleButtonUp" inherits="AddonMgrListNormal" virtual="true">
 		<Frames>
 			<Button parentKey="collapseExpand" mixin="AddonMgrListParentCategoryMixin">
 				<Size x="10" y="16"/>

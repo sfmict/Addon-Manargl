@@ -177,7 +177,7 @@ listFrame:HookScript("OnShow", function(self)
 					local _,_,_, color = GetClassColor(profile.class)
 					list[#list + 1] = {
 						notCheckable = true,
-						text = ("|C%s%s|r |cff808080(%d %s)"):format(color, profile.name, profile.count, ADDONS),
+						text = ("|c%s%s|r |cff808080(%d %s)|r"):format(color, profile.name, profile.count, ADDONS),
 						value = profile,
 						func = func,
 						remove = remove,

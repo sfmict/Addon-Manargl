@@ -163,6 +163,8 @@ end
 function AddonMgrListNormalMixin:onClick(button)
 	if button == "LeftButton" then
 		self.check:Click()
+	elseif button == "MiddleButton" then
+		self.collapseExpand:Click()
 	else
 		listFrame.contextMenu:ddToggle(1, self:GetData().index, "cursor")
 	end
@@ -170,7 +172,9 @@ end
 
 
 function AddonMgrListNormalMixin:onEnter()
-	listFrame.tooltipIndex = self:GetData().index
+	local index = self:GetData().index
+	if listFrame.tooltipIndex == index then return end
+	listFrame.tooltipIndex = index
 	GameTooltip:SetOwner(self, "ANCHOR_NONE")
 	GameTooltip:SetPoint("LEFT", self, "RIGHT")
 	listFrame:updateTooltip()
@@ -178,8 +182,10 @@ end
 
 
 function AddonMgrListNormalMixin:onLeave()
-	listFrame.tooltipIndex = nil
-	GameTooltip:Hide()
+	if self:IsShown() then
+		listFrame.tooltipIndex = nil
+		GameTooltip:Hide()
+	end
 end
 
 
