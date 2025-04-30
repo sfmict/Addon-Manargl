@@ -196,6 +196,7 @@ function AddonMgrListParentCategoryMixin:onClick()
 	local collapsed = self.node:ToggleCollapsed(TreeDataProviderConstants.RetainChildCollapse, TreeDataProviderConstants.DoInvalidation)
 	listFrame:setCollapsed(self.node:GetData().index, collapsed)
 	self:updateState()
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 end
 
 

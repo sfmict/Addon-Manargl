@@ -33,30 +33,23 @@
 					<OnClick>self:GetParent():Hide()</OnClick>
 				</Scripts>
 			</Button>
-			<Button parentKey="settingsBtn" frameLevel="2501" mixin="QuestLogSettingsButtonMixin">
+			<Button parentKey="settingsBtn" frameLevel="2501">
 				<Size x="15" y="16"/>
 				<Anchors>
 					<Anchor point="TOPRIGHT" x="-28" y="-4"/>
 				</Anchors>
 				<Layers>
 					<Layer level="ARTWORK">
-						<Texture parentKey="Icon" atlas="questlog-icon-setting" useAtlasSize="true">
+						<Texture parentKey="icon">
 							<Anchors>
 								<Anchor point="CENTER"/>
 							</Anchors>
 						</Texture>
 					</Layer>
-					<Layer level="HIGHLIGHT">
-						<Texture atlas="questlog-icon-setting" useAtlasSize="true" inherits="QuestLogHighlightTextureTemplate">
-							<Anchors>
-								<Anchor point="CENTER" relativeKey="$parent.Icon"/>
-							</Anchors>
-						</Texture>
-					</Layer>
 				</Layers>
 				<Scripts>
-					<OnMouseDown method="OnMouseDown"/>
-					<OnMouseUp method="OnMouseUp"/>
+					<OnMouseDown>self.icon:AdjustPointsOffset(1, -1)</OnMouseDown>
+					<OnMouseUp>self.icon:AdjustPointsOffset(-1, 1)</OnMouseUp>
 				</Scripts>
 			</Button>
 			<Frame parentKey="inset" useParentLevel="true" inherits="InsetFrameTemplate">

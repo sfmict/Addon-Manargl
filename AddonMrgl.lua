@@ -140,25 +140,30 @@ listFrame:SetScript("OnShow", function(self)
 
 	local lsfdd = LibStub("LibSFDropDown-1.5")
 
-	if not self.isMainline then
+	if C_Texture.GetAtlasInfo("questlog-icon-setting") then
+		self.settingsBtn.icon:SetAtlas("questlog-icon-setting", true)
+		self.settingsBtn.highlight = self.settingsBtn:CreateTexture(nil, "HIGHLIGHT")
+		self.settingsBtn.highlight:SetPoint("CENTER")
+		self.settingsBtn.highlight:SetAtlas("questlog-icon-setting", true)
+		self.settingsBtn.highlight:SetBlendMode("ADD")
+		self.settingsBtn.highlight:SetAlpha(.4)
+	else
 		self.closeButton:SetPoint("TOPRIGHT", 4, 4)
 
-		self.settingsBtn.Icon:SetTexture([[Interface\Worldmap\Gear_64]])
-		self.settingsBtn.Icon:SetTexCoord(0, .5, 0, .5)
-		self.settingsBtn.Icon:SetVertexColor(.7, .7, .7)
-		self.settingsBtn.Icon:SetDesaturated(true)
-		self.settingsBtn.Icon:SetSize(20, 20)
+		self.settingsBtn.icon:SetTexture([[Interface\Worldmap\Gear_64]])
+		self.settingsBtn.icon:SetTexCoord(0, .5, 0, .5)
+		self.settingsBtn.icon:SetVertexColor(.7, .7, .7)
+		self.settingsBtn.icon:SetDesaturated(true)
+		self.settingsBtn.icon:SetSize(20, 20)
 		self.settingsBtn:SetAlpha(.8)
 		self.settingsBtn:SetScript("OnEnter", function(self)
 			self:SetAlpha(1)
-			self.Icon:SetVertexColor(.9, .9, .9)
+			self.icon:SetVertexColor(.9, .9, .9)
 		end)
 		self.settingsBtn:SetScript("OnLeave", function(self)
 			self:SetAlpha(.8)
-			self.Icon:SetVertexColor(.7, .7, .7)
+			self.icon:SetVertexColor(.7, .7, .7)
 		end)
-		self.settingsBtn:SetScript("OnMouseDown", function(self) self.Icon:AdjustPointsOffset(1, -1) end)
-		self.settingsBtn:SetScript("OnMouseUp", function(self) self.Icon:AdjustPointsOffset(-1, 1) end)
 
 		self.inset:SetPoint("BOTTOMRIGHT", -6, 28)
 		self.enableAll:SetPoint("BOTTOMLEFT", 8, 6)
@@ -363,6 +368,7 @@ listFrame:SetScript("OnShow", function(self)
 	local cpuBtnClick = function(btn)
 		self.config.cpuSortBy = self.config.cpuSortBy ~= btn.value and btn.value or nil
 		self:updateCpuButtons()
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 	end
 
 	self.currentCPU.value = "current"
@@ -476,9 +482,14 @@ end)
 function listFrame:onShow()
 	UpdateAddOnMemoryUsage()
 	self:updatePerformance()
-	self:updateList()
 	self:updateReloadButton()
-
+	if self.config.cpuSortBy then
+		self:sort()
+	else
+		self:updateList()
+	end
+	self.uTimer = .1
+	self.syncCounter = 0
 	self.searchBox:SetText("")
 	if self.config.autofocusSearch then
 		self.searchBox:SetFocus()
