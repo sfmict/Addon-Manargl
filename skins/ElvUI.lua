@@ -2,6 +2,8 @@ if not C_AddOns.IsAddOnLoaded("ElvUI") then return end
 local E = ElvUI[1]
 if not (E.private.skins.blizzard.enable and E.private.skins.blizzard.addonManager) then return end
 local S = E:GetModule("Skins")
+local listFrame = AddonMgrAddonList
+listFrame.minimapBtnMenu:ddSetDisplayMode("ElvUI")
 
 
 local function setCheckColor(t, r)
@@ -27,7 +29,7 @@ local function btnInit(self, f)
 end
 
 
-AddonMgrAddonList:HookScript("OnShow", function(self)
+listFrame:HookScript("OnShow", function(self)
 	self:StripTextures()
 	self:SetTemplate("Transparent")
 	if self.TitleContainer.TitleBg then -- classic

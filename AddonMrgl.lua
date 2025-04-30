@@ -3,8 +3,9 @@ local L = ns.L
 local listFrame = AddonMgrAddonList
 local C_AddOns = C_AddOns
 
-local LEFT_MOUSE_ICON = C_Texture.GetAtlasInfo("newplayertutorial-icon-mouse-leftbutton") and "|A:newplayertutorial-icon-mouse-leftbutton:0:0|a" or ""
-local RIGHT_MOUSE_ICON = C_Texture.GetAtlasInfo("newplayertutorial-icon-mouse-rightbutton") and "|A:newplayertutorial-icon-mouse-rightbutton:0:0|a" or ""
+listFrame.isMainline = WOW_PROJECT_MAINLINE == WOW_PROJECT_ID
+listFrame.LEFT_MOUSE_ICON = C_Texture.GetAtlasInfo("newplayertutorial-icon-mouse-leftbutton") and "|A:newplayertutorial-icon-mouse-leftbutton:0:0|a " or ""
+listFrame.RIGHT_MOUSE_ICON = C_Texture.GetAtlasInfo("newplayertutorial-icon-mouse-rightbutton") and "|A:newplayertutorial-icon-mouse-rightbutton:0:0|a " or ""
 local BANNED = "BANNED"
 local SECURE_PROTECTED = "SECURE_PROTECTED"
 local SECURE = "SECURE"
@@ -118,9 +119,6 @@ listFrame:SetScript("OnShow", function(self)
 	self:RegisterForDrag("LeftButton")
 	self:SetTitle(C_AddOns.GetAddOnMetadata(addon, "Title"))
 	tinsert(UISpecialFrames, self:GetName())
-
-	self.addonName = ("%s_ADDON_"):format(addon:upper())
-	self.isMainline = WOW_PROJECT_MAINLINE == WOW_PROJECT_ID
 
 	self.performance = self.inset.performance
 	self.currentCPU = self.performance.left.current
@@ -855,10 +853,10 @@ do
 
 			GameTooltip:AddLine(" ");
 			if self.childByPIndex[self.tooltipIndex] then
-				GameTooltip:AddLine(LEFT_MOUSE_ICON..L["Left+Shift with children"])
+				GameTooltip:AddLine(self.LEFT_MOUSE_ICON..L["Left+Shift with children"])
 			end
-			GameTooltip:AddLine(LEFT_MOUSE_ICON..L["Left+Alt to lock/unclock"])
-			GameTooltip:AddLine(RIGHT_MOUSE_ICON..L["Right For more options"])
+			GameTooltip:AddLine(self.LEFT_MOUSE_ICON..L["Left+Alt to lock/unclock"])
+			GameTooltip:AddLine(self.RIGHT_MOUSE_ICON..L["Right For more options"])
 		end
 
 		GameTooltip:Show()

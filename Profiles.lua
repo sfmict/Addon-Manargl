@@ -1,8 +1,87 @@
 local addon, ns = ...
 local L = ns.L
 local listFrame = AddonMgrAddonList
+local lastProfileName, profilePopupAction
+listFrame.addonName = ("%s_ADDON_"):format(addon:upper())
 
 
+--POPUPS
+StaticPopupDialogs[listFrame.addonName.."NEW_PROFILE"] = {
+	text = addon..": "..L["Create profile"],
+	button1 = ACCEPT,
+	button2 = CANCEL,
+	hasEditBox = 1,
+	maxLetters = 48,
+	editBoxWidth = 350,
+	hideOnEscape = 1,
+	whileDead = 1,
+	OnAccept = function(self, cb) cb(self) end,
+	EditBoxOnEnterPressed = function(self)
+		StaticPopup_OnClick(self:GetParent(), 1)
+	end,
+	EditBoxOnEscapePressed = function(self)
+		self:GetParent():Hide()
+	end,
+}
+local function profileExistsAccept(popup, data)
+	if not popup then return end
+	popup:Hide()
+	profilePopupAction(listFrame, data)
+	profilePopupAction = nil
+	lastProfileName = nil
+end
+StaticPopupDialogs[listFrame.addonName.."PROFILE_EXISTS"] = {
+	text = addon..": "..L["A profile with the same name exists."],
+	button1 = OKAY,
+	hideOnEscape = 1,
+	whileDead = 1,
+	OnAccept = profileExistsAccept,
+	OnCancel = profileExistsAccept,
+}
+StaticPopupDialogs[listFrame.addonName.."EDIT_PROFILE"] = {
+	text = addon..": "..EDIT,
+	button1 = ACCEPT,
+	button2 = CANCEL,
+	hasEditBox = 1,
+	maxLetters = 48,
+	editBoxWidth = 350,
+	hideOnEscape = 1,
+	whileDead = 1,
+	OnAccept = function(self, cb) cb(self) end,
+	EditBoxOnEnterPressed = function(self)
+		StaticPopup_OnClick(self:GetParent(), 1)
+	end,
+	EditBoxOnEscapePressed = function(self)
+		self:GetParent():Hide()
+	end,
+}
+StaticPopupDialogs[listFrame.addonName.."DELETE_PROFILE"] = {
+	text = addon..": "..L["Are you sure you want to delete %s profile?"],
+	button1 = DELETE,
+	button2 = CANCEL,
+	hideOnEscape = 1,
+	whileDead = 1,
+	OnAccept = function(_, cb) cb() end,
+}
+StaticPopupDialogs[listFrame.addonName.."YOU_WANT"] = {
+	text = addon..": "..L["Are you sure you want to %s?"],
+	button1 = OKAY,
+	button2 = CANCEL,
+	hideOnEscape = 1,
+	whileDead = 1,
+	OnAccept = function(_, cb) cb() end,
+}
+StaticPopupDialogs[listFrame.addonName.."CUSTOM_OK_CANCEL"] = {
+	text = addon..": %s",
+	button1 = OKAY,
+	button2 = CANCEL,
+	hideOnEscape = 1,
+	whileDead = 1,
+	OnAccept = function(_, cb) cb() end,
+}
+
+
+-- SAVE CHAR PROFILES
 function listFrame:PLAYER_LOGOUT()
 	local charName = self.charName.." - "..GetRealmName()
 	local curCharProfile
@@ -23,90 +102,14 @@ end
 listFrame:RegisterEvent("PLAYER_LOGOUT")
 
 
+-- DROPDOWN
 listFrame:HookScript("OnShow", function(self)
 	local dd = LibStub("LibSFDropDown-1.5"):CreateStretchButton(self, 90, 26)
 	if not self.isMainline then dd:ddSetDisplayMode("menuBackdrop") end
 	self.profileBtn = dd
 	dd:SetPoint("TOPRIGHT", -6, -30)
 	dd:SetText(L["Profiles"])
-	local lastProfileName, profilePopupAction
 
-	--POPUP
-	StaticPopupDialogs[self.addonName.."NEW_PROFILE"] = {
-		text = addon..": "..L["Create profile"],
-		button1 = ACCEPT,
-		button2 = CANCEL,
-		hasEditBox = 1,
-		maxLetters = 48,
-		editBoxWidth = 350,
-		hideOnEscape = 1,
-		whileDead = 1,
-		OnAccept = function(self, cb) cb(self) end,
-		EditBoxOnEnterPressed = function(self)
-			StaticPopup_OnClick(self:GetParent(), 1)
-		end,
-		EditBoxOnEscapePressed = function(self)
-			self:GetParent():Hide()
-		end,
-	}
-	local function profileExistsAccept(popup, data)
-		if not popup then return end
-		popup:Hide()
-		self:profilePopupAction(data)
-		self.profilePopupAction = nil
-		self.lastProfileName = nil
-	end
-	StaticPopupDialogs[self.addonName.."PROFILE_EXISTS"] = {
-		text = addon..": "..L["A profile with the same name exists."],
-		button1 = OKAY,
-		hideOnEscape = 1,
-		whileDead = 1,
-		OnAccept = profileExistsAccept,
-		OnCancel = profileExistsAccept,
-	}
-	StaticPopupDialogs[self.addonName.."EDIT_PROFILE"] = {
-		text = addon..": "..EDIT,
-		button1 = ACCEPT,
-		button2 = CANCEL,
-		hasEditBox = 1,
-		maxLetters = 48,
-		editBoxWidth = 350,
-		hideOnEscape = 1,
-		whileDead = 1,
-		OnAccept = function(self, cb) cb(self) end,
-		EditBoxOnEnterPressed = function(self)
-			StaticPopup_OnClick(self:GetParent(), 1)
-		end,
-		EditBoxOnEscapePressed = function(self)
-			self:GetParent():Hide()
-		end,
-	}
-	StaticPopupDialogs[self.addonName.."DELETE_PROFILE"] = {
-		text = addon..": "..L["Are you sure you want to delete %s profile?"],
-		button1 = DELETE,
-		button2 = CANCEL,
-		hideOnEscape = 1,
-		whileDead = 1,
-		OnAccept = function(_, cb) cb() end,
-	}
-	StaticPopupDialogs[self.addonName.."YOU_WANT"] = {
-		text = addon..": "..L["Are you sure you want to %s?"],
-		button1 = OKAY,
-		button2 = CANCEL,
-		hideOnEscape = 1,
-		whileDead = 1,
-		OnAccept = function(_, cb) cb() end,
-	}
-	StaticPopupDialogs[self.addonName.."CUSTOM_OK_CANCEL"] = {
-		text = addon..": %s",
-		button1 = OKAY,
-		button2 = CANCEL,
-		hideOnEscape = 1,
-		whileDead = 1,
-		OnAccept = function(_, cb) cb() end,
-	}
-
-	-- DROPDOWN
 	dd:ddSetInitFunc(function(dd, level, value)
 		local info = {}
 
@@ -138,7 +141,7 @@ listFrame:HookScript("OnShow", function(self)
 
 				local list = {}
 				for i, profile in ipairs(self.profiles) do
-					list[#list + 1] = {
+					list[i] = {
 						hasArrow = true,
 						notCheckable = true,
 						text = ("%s |cff808080(%d %s)"):format(profile.name, profile.count, ADDONS),
@@ -355,8 +358,8 @@ function listFrame:createProfile()
 		if text and text ~= "" then
 			for i, profile in ipairs(self.profiles) do
 				if profile.name == text then
-					self.lastProfileName = text
-					self.profilePopupAction = self.createProfile
+					lastProfileName = text
+					profilePopupAction = self.createProfile
 					StaticPopup_Show(self.addonName.."PROFILE_EXISTS")
 					return
 				end
@@ -367,8 +370,8 @@ function listFrame:createProfile()
 			sort(self.profiles, function(a, b) return a.name < b.name end)
 		end
 	end)
-	if dialog and self.lastProfileName then
-		dialog.editBox:SetText(self.lastProfileName)
+	if dialog and lastProfileName then
+		dialog.editBox:SetText(lastProfileName)
 		dialog.editBox:HighlightText()
 	end
 end
@@ -381,8 +384,8 @@ function listFrame:editProfile(editProfile)
 		if text and text ~= editProfile.name and text ~= "" then
 			for _, profile in ipairs(self.profiles) do
 				if profile.name == text then
-					self.lastProfileName = text
-					self.profilePopupAction = self.editProfile
+					lastProfileName = text
+					profilePopupAction = self.editProfile
 					StaticPopup_Show(self.addonName.."PROFILE_EXISTS", nil, nil, editProfile)
 					return
 				end
@@ -392,7 +395,7 @@ function listFrame:editProfile(editProfile)
 		end
 	end)
 	if dialog then
-		dialog.editBox:SetText(self.lastProfileName or editProfile.name)
+		dialog.editBox:SetText(lastProfileName or editProfile.name)
 		dialog.editBox:HighlightText()
 	end
 end
