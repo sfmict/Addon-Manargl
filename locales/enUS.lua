@@ -41,6 +41,7 @@ L["Are you sure you want to delete %s profile?"] = "Are you sure you want to del
 L["Are you sure you want to %s?"] = "Are you sure you want to %s?"
 L["Rewrite addons to %s profile?"] = "Rewrite addons to %s profile?"
 L["Load %s profile?"] = "Load %s profile?"
+L["Load %s profile and reload UI?"] = "Load %s profile and reload UI?"
 L["Enable addons from %s profile?"] = "Enable addons from %s profile?"
 L["Disable addons from %s profile?"] = "Disable addons from %s profile?"
 L["Remove all character profiles"] = "Remove all character profiles"

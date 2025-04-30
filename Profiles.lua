@@ -35,6 +35,7 @@ StaticPopupDialogs[listFrame.addonName.."PROFILE_EXISTS"] = {
 	button1 = OKAY,
 	hideOnEscape = 1,
 	whileDead = 1,
+	enterClicksFirstButton = 1,
 	OnAccept = profileExistsAccept,
 	OnCancel = profileExistsAccept,
 }
@@ -77,6 +78,7 @@ StaticPopupDialogs[listFrame.addonName.."CUSTOM_OK_CANCEL"] = {
 	button2 = CANCEL,
 	hideOnEscape = 1,
 	whileDead = 1,
+	enterClicksFirstButton = 1,
 	OnAccept = function(_, cb) cb() end,
 }
 
@@ -323,12 +325,18 @@ function listFrame:enableAddonsTree(profile, enabled, context)
 end
 
 
-function listFrame:loadProfileAddons(profile)
-	StaticPopup_Show(self.addonName.."CUSTOM_OK_CANCEL", L["Load %s profile?"]:format(NORMAL_FONT_COLOR:WrapTextInColorCode(profile.name)), nil, function()
+function listFrame:loadProfileAddons(profile, reloadCheck)
+	local actionText = reloadCheck and L["Load %s profile and reload UI?"] or L["Load %s profile?"]
+	StaticPopup_Show(self.addonName.."CUSTOM_OK_CANCEL", actionText:format(NORMAL_FONT_COLOR:WrapTextInColorCode(profile.name)), nil, function()
 		for i = 1, C_AddOns.GetNumAddOns() do self:enableAddon(self.nameByIndex[i], false) end
 		self:enableAddonsTree(profile, true)
-		self:updateFilters()
-		self:updateReloadButton()
+
+		if self:IsShown() then
+			self:updateFilters()
+			self:updateReloadButton()
+		end
+
+		if reloadCheck and self:hasAnyChanges() then ReloadUI() end
 	end)
 end
 

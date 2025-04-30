@@ -13,7 +13,6 @@ local SECURE = "SECURE"
 
 listFrame:SetScript("OnEvent", function(self, event, ...) self[event](self, ...) end)
 listFrame:RegisterEvent("ADDON_LOADED")
-listFrame:RegisterEvent("UI_SCALE_CHANGED")
 
 
 function listFrame:ADDON_LOADED(addonName)
@@ -107,12 +106,6 @@ function listFrame:ADDON_LOADED(addonName)
 end
 
 
-function listFrame:UI_SCALE_CHANGED()
-	if not self.addonName then return end
-	self.config.posX, self.config.posY = self:GetCenter()
-end
-
-
 listFrame:SetScript("OnShow", function(self)
 	self:SetScript("OnShow", self.onShow)
 	self:SetFrameLevel(2000)
@@ -178,14 +171,18 @@ listFrame:SetScript("OnShow", function(self)
 	local height = Clamp(self.config.height or maxHeight * .75, minHeight, maxHeight)
 	self:SetSize(width, height)
 	if self.config.posX and self.config.posY then
-		self:SetPoint("CENTER", UIParent, "BOTTOMLEFT", self.config.posX, self.config.posY)
+		local scale = self:GetEffectiveScale()
+		self:SetPoint("CENTER", UIParent, "BOTTOMLEFT", self.config.posX / scale, self.config.posY / scale)
 	end
 
 	-- MOVING
 	self:SetScript("OnDragStart", self.StartMoving)
 	self:SetScript("OnDragStop", function(self)
 		self:StopMovingOrSizing()
-		self.config.posX, self.config.posY = self:GetCenter()
+		local x, y = self:GetCenter()
+		local scale = self:GetEffectiveScale()
+		self.config.posX = x * scale
+		self.config.posY = y * scale
 	end)
 
 	-- RESIZE
@@ -451,9 +448,6 @@ listFrame:SetScript("OnShow", function(self)
 	self.hasParentByIndex = {}
 	self.childByPIndex = {}
 	self.filtred = {}
-
-	-- HOOKS
-	hooksecurefunc(UIParent, "SetScale", function() self:UI_SCALE_CHANGED() end)
 
 	-- INIT
 	self:setCpuAccuracyStr()

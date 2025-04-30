@@ -18,7 +18,7 @@ menu:ddSetInitFunc(function(dd, level)
 	info.text = L["Profiles"]
 	dd:ddAddButton(info, level)
 
-	local func = function(btn) listFrame:loadProfileAddons(btn.value) end
+	local func = function(btn) listFrame:loadProfileAddons(btn.value, true) end
 
 	local list = {}
 	for i, profile in ipairs(listFrame.profiles) do
