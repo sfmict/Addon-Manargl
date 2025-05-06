@@ -15,6 +15,8 @@ L["Left+Alt to lock/unclock"] = "Alt+Left click to lock/unclock"
 L["Right For more options"] = "Right For more options"
 L["Left click to open the Addon Manargl"] = "Left click to open the Addon Manargl"
 L["Right click to open the Profile Menu"] = "Right click to open the Profile Menu"
+L["Enabled for current character"] = "Enabled for current character"
+L["Enabled for some other characters"] = "Enabled for some other characters"
 -- CONTEXTMENU
 L["Lock addon"] = "Lock addon"
 L["Enalbe with children"] = "Enalbe with children"

@@ -16,93 +16,86 @@ listFrame:RegisterEvent("ADDON_LOADED")
 
 
 function listFrame:ADDON_LOADED(addonName)
-	if addonName == addon then
-		AddonMgrDB = AddonMgrDB or {}
-		self.db = AddonMgrDB
-		self.db.config = self.db.config or {}
-		self.db.profiles = self.db.profiles or {}
-		self.db.charProfiles = self.db.charProfiles or {}
-		self.db.depCollapsed = self.db.depCollapsed or {}
-		self.db.locked = self.db.locked or {}
-		self.db.omb = self.db.omb or {}
+	if addonName ~= addon then return end
+	AddonMgrDB = AddonMgrDB or {}
+	self.db = AddonMgrDB
+	self.db.config = self.db.config or {}
+	self.db.profiles = self.db.profiles or {}
+	self.db.charProfiles = self.db.charProfiles or {}
+	self.db.depCollapsed = self.db.depCollapsed or {}
+	self.db.locked = self.db.locked or {}
+	self.db.omb = self.db.omb or {}
 
-		self.config = self.db.config
-		self.config.listGroup = self.config.listGroup or "dep"
-		self.config.sortBy = self.config.sortBy or "name"
-		if self.config.memUpdate == nil then self.config.memUpdate = 30 end
-		if self.config.cpuUpdate == nil then self.config.cpuUpdate = 1 end
-		if self.config.cpuAccuracy == nil then self.config.cpuAccuracy = 2 end
-		if self.config.replaceAddonButton == nil then self.config.replaceAddonButton = true end
-		if self.config.usePlayer == nil then self.config.usePlayer = true end
-		if self.config.showIcon == nil then self.config.showIcon = true end
-		if self.config.showNoIcon == nil then self.config.showNoIcon = true end
-		self.config.searchBy = self.config.searchBy or {}
-		if self.config.searchBy.title == nil then self.config.searchBy.title = true end
-		if self.config.searchBy.name == nil then self.config.searchBy.name = true end
-		if self.config.searchBy.author == nil then self.config.searchBy.author = true end
-		if self.config.searchBy.category == nil then self.config.searchBy.category = true end
+	self.config = self.db.config
+	self.config.listGroup = self.config.listGroup or "dep"
+	self.config.sortBy = self.config.sortBy or "name"
+	if self.config.memUpdate == nil then self.config.memUpdate = 30 end
+	if self.config.cpuUpdate == nil then self.config.cpuUpdate = 1 end
+	if self.config.cpuAccuracy == nil then self.config.cpuAccuracy = 2 end
+	if self.config.replaceAddonButton == nil then self.config.replaceAddonButton = true end
+	if self.config.usePlayer == nil then self.config.usePlayer = true end
+	if self.config.showIcon == nil then self.config.showIcon = true end
+	if self.config.showNoIcon == nil then self.config.showNoIcon = true end
+	self.config.searchBy = self.config.searchBy or {}
+	if self.config.searchBy.title == nil then self.config.searchBy.title = true end
+	if self.config.searchBy.name == nil then self.config.searchBy.name = true end
+	if self.config.searchBy.author == nil then self.config.searchBy.author = true end
+	if self.config.searchBy.category == nil then self.config.searchBy.category = true end
 
-		self.profiles = self.db.profiles
-		self.charProfiles = self.db.charProfiles
-		self.depCollapsed = self.db.depCollapsed
-		self.locked = self.db.locked
+	self.profiles = self.db.profiles
+	self.charProfiles = self.db.charProfiles
+	self.depCollapsed = self.db.depCollapsed
+	self.locked = self.db.locked
 
-		self.charName = UnitName("player")
-		self.sorted = {}
-		self.indexByName = {}
-		self.nameByIndex = {}
-		self.titleByIndex = {}
-		self.startStatus = {}
-		self.outOfDateIndexes = {}
+	self.charName = UnitName("player")
+	self.indexByName = {}
+	self.nameByIndex = {}
 
-		for i = 1, C_AddOns.GetNumAddOns() do
-			local name, title, _,_, reason = C_AddOns.GetAddOnInfo(i)
-			self.sorted[i] = i
-			self.indexByName[name] = i
-			self.nameByIndex[i] = name
-			self.titleByIndex[i] = title:gsub("|[Cc]%x%x%x%x%x%x%x%x", ""):gsub("|[Rr]", ""):gsub("|T.-|t", ""):gsub("|A.-|a", ""):trim():lower()
-			self.startStatus[i] = C_AddOns.GetAddOnEnableState(i, self.charName) > Enum.AddOnEnableState.None
-			if reason == "INTERFACE_VERSION" then
-				self.outOfDateIndexes[i] = true
-			end
+	for i = 1, C_AddOns.GetNumAddOns() do
+		local name = C_AddOns.GetAddOnInfo(i)
+		self.indexByName[name] = i
+		self.nameByIndex[i] = name
+	end
+
+	for name in next, self.depCollapsed do
+		if not self.indexByName[name] then
+			self.depCollapsed[name] = nil
+		end
+	end
+
+	function self:ADDON_LOADED(addonName)
+		if self.dataProvider and self.indexByName[addonName] and self:IsShown() then
+			UpdateAddOnMemoryUsage()
+			self:sort()
+		end
+	end
+
+	-- MENU BUTTON HOOK
+	GameMenuFrame:HookScript("OnShow", function(GameMenuFrame)
+		local function overrideScript(widget)
+			local oldClick = widget:GetScript("OnClick")
+			widget:SetScript("OnClick", function(...)
+				if self.config.replaceAddonButton then
+					PlaySound(SOUNDKIT.IG_MAINMENU_OPTION)
+					HideUIPanel(GameMenuFrame)
+					self:Show()
+				else
+					oldClick(...)
+				end
+			end)
 		end
 
-		for name in next, self.depCollapsed do
-			if not self.indexByName[name] then
-				self.depCollapsed[name] = nil
-			end
-		end
-
-		-- MENU BUTTON HOOK
-		GameMenuFrame:HookScript("OnShow", function(GameMenuFrame)
-			local function overrideScript(widget)
-				local oldClick = widget:GetScript("OnClick")
-				widget:SetScript("OnClick", function(...)
-					if self.config.replaceAddonButton then
-						PlaySound(SOUNDKIT.IG_MAINMENU_OPTION)
-						HideUIPanel(GameMenuFrame)
-						self:Show()
-					else
-						oldClick(...)
-					end
-				end)
-			end
-
-			if GameMenuButtonAddons then
-				overrideScript(GameMenuButtonAddons)
-			else
-				for widget in GameMenuFrame.buttonPool:EnumerateActive() do
-					if widget:GetText() == ADDONS then
-						overrideScript(widget)
-						break
-					end
+		if GameMenuButtonAddons then
+			overrideScript(GameMenuButtonAddons)
+		else
+			for widget in GameMenuFrame.buttonPool:EnumerateActive() do
+				if widget:GetText() == ADDONS then
+					overrideScript(widget)
+					break
 				end
 			end
-		end)
-	elseif self.dataProvider and self.indexByName[addonName] and self:IsShown() then
-		UpdateAddOnMemoryUsage()
-		self:sort()
-	end
+		end
+	end)
 end
 
 
@@ -204,6 +197,8 @@ listFrame:SetScript("OnShow", function(self)
 	-- CIRCULAR & CATEGORIES
 	local context = {}
 	self.circular = {}
+	self.sorted = {}
+	self.titleByIndex = {}
 	self.catigoriesList = {}
 	self.categoriesFilter = {}
 	local function checkCirc(i)
@@ -217,6 +212,9 @@ listFrame:SetScript("OnShow", function(self)
 		context[i] = nil
 	end
 	for i = 1, C_AddOns.GetNumAddOns() do
+		local name, title = C_AddOns.GetAddOnInfo(i)
+		self.sorted[i] = i
+		self.titleByIndex[i] = title:gsub("|[Cc]%x%x%x%x%x%x%x%x", ""):gsub("|[Rr]", ""):gsub("|T.-|t", ""):gsub("|A.-|a", ""):trim():lower()
 		checkCirc(i)
 		local category = C_AddOns.GetAddOnMetadata(i, "Category")
 		if category then
@@ -542,13 +540,13 @@ function listFrame:sort()
 	local metric, copy
 	if self.config.cpuSortBy then
 		if self.config.cpuSortBy == "current" then
-			metric = self.profilerEnumRecentAverageTime
+			metric = self.enumRecentAverageTime
 		elseif self.config.cpuSortBy == "average" then
-			metric = self.profilerEnumSessionAverageTime
+			metric = self.enumSessionAverageTime
 		elseif self.config.cpuSortBy == "peak" then
-			metric = self.profilerEnumPeakTime
+			metric = self.enumPeakTime
 		elseif self.config.cpuSortBy == "encounter" then
-			metric = self.profilerEnumEncounterAverageTime
+			metric = self.enumEncounterAverageTime
 		end
 		copy = {}
 		for i = 1, #self.sorted do copy[i] = self.sorted[i] end
@@ -759,23 +757,19 @@ end
 
 function listFrame:getAddonDepsString(name, reason)
 	local deps = {C_AddOns.GetAddOnDependencies(name)}
-	local depsString = ""
+	if #deps == 0 then return "" end
 	for i = 1, #deps do
 		local dName = deps[i]
-		local loadable, reason = C_AddOns.IsAddOnLoadable(dName, self.addonCharacter)
+		local loadable, reason = C_AddOns.IsAddOnLoadable(dName, self.charName)
 		local color = HIGHLIGHT_FONT_COLOR
 		if reason == "MISSING" then
 			color = RED_FONT_COLOR
-		elseif C_AddOns.GetAddOnEnableState(dName, self.addonCharacter) > Enum.AddOnEnableState.None then
+		elseif C_AddOns.GetAddOnEnableState(dName, self.charName) > Enum.AddOnEnableState.None then
 			color = GREEN_FONT_COLOR
 		end
-		if i == 1 then
-			depsString = ADDON_DEPENDENCIES..color:WrapTextInColorCode(dName)
-		else
-			depsString = depsString..", "..color:WrapTextInColorCode(dName)
-		end
+		deps[i] = color:WrapTextInColorCode(dName)
 	end
-	return depsString
+	return ADDON_DEPENDENCIES..table.concat(deps, ", ")
 end
 
 
@@ -820,15 +814,15 @@ do
 			local loaded = C_AddOns.IsAddOnLoaded(name)
 			if loaded then
 				if self:isProfilerEnabled() then
-					addLineNotEmpty(L["Current CPU"], self:getAddonMetricPercent(name, self.profilerEnumRecentAverageTime))
-					addLineNotEmpty(L["Average CPU"], self:getAddonMetricPercent(name, self.profilerEnumSessionAverageTime))
-					addLineNotEmpty(L["Peak CPU"], self:getAddonMetricPercent(name, self.profilerEnumPeakTime))
-					addLineNotEmpty(L["Encounter CPU"], self:getAddonMetricPercent(name, self.profilerEnumEncounterAverageTime))
-					addLineNotEmpty(L["Ticks over %sms"]:format(5), self:getAddonMetricCount(name, self.profilerEnumCountTimeOver5Ms))
-					addLineNotEmpty(L["Ticks over %sms"]:format(10), self:getAddonMetricCount(name, self.profilerEnumCountTimeOver10Ms))
-					addLineNotEmpty(L["Ticks over %sms"]:format(50), self:getAddonMetricCount(name, self.profilerEnumCountTimeOver50Ms))
-					addLineNotEmpty(L["Ticks over %sms"]:format(100), self:getAddonMetricCount(name, self.profilerEnumCountTimeOver100Ms))
-					addLineNotEmpty(L["Ticks over %sms"]:format(500), self:getAddonMetricCount(name, self.profilerEnumCountTimeOver500Ms))
+					addLineNotEmpty(L["Current CPU"], self:getAddonMetricPercent(name, self.enumRecentAverageTime))
+					addLineNotEmpty(L["Average CPU"], self:getAddonMetricPercent(name, self.enumSessionAverageTime))
+					addLineNotEmpty(L["Peak CPU"], self:getAddonMetricPercent(name, self.enumPeakTime))
+					addLineNotEmpty(L["Encounter CPU"], self:getAddonMetricPercent(name, self.enumEncounterAverageTime))
+					addLineNotEmpty(L["Ticks over %sms"]:format(5), self:getAddonMetricCount(name, self.enumCountTimeOver5Ms))
+					addLineNotEmpty(L["Ticks over %sms"]:format(10), self:getAddonMetricCount(name, self.enumCountTimeOver10Ms))
+					addLineNotEmpty(L["Ticks over %sms"]:format(50), self:getAddonMetricCount(name, self.enumCountTimeOver50Ms))
+					addLineNotEmpty(L["Ticks over %sms"]:format(100), self:getAddonMetricCount(name, self.enumCountTimeOver100Ms))
+					addLineNotEmpty(L["Ticks over %sms"]:format(500), self:getAddonMetricCount(name, self.enumCountTimeOver500Ms))
 				end
 
 				if security ~= SECURE_PROTECTED and security ~= SECURE then
@@ -860,14 +854,12 @@ end
 
 function listFrame:hasAnyChanges()
 	for i = 1, C_AddOns.GetNumAddOns() do
-		local enabled = C_AddOns.GetAddOnEnableState(i, self.charName) > Enum.AddOnEnableState.None
 		local loadable, reason = C_AddOns.IsAddOnLoadable(i, self.charName)
-
-		if (enabled ~= self.startStatus[i] and (reason == "" or reason == "DISABLED")
-			or reason ~= "INTERFACE_VERSION" and self.outOfDateIndexes[i]
-			or reason == "INTERFACE_VERSION" and not self.outOfDateIndexes[i])
-		and (enabled or C_AddOns.IsAddOnLoaded(i)) then
-			return true
+		if reason ~= "DEMAND_LOADED" and reason ~= "DEP_DEMAND_LOADED" then
+			local enabled = C_AddOns.GetAddOnEnableState(i, self.charName) > Enum.AddOnEnableState.None
+			if (enabled and loadable) ~= C_AddOns.IsAddOnLoaded(i) then
+				return true
+			end
 		end
 	end
 	return false
@@ -896,7 +888,7 @@ end
 
 function listFrame:normalInit(f, node)
 	local index = node:GetData().index
-	local name, title, notes, _,_, security, updateAvailable = C_AddOns.GetAddOnInfo(index)
+	local name, title = C_AddOns.GetAddOnInfo(index)
 	f.name = name
 
 	if self.config.showIcon then
@@ -921,17 +913,18 @@ function listFrame:normalInit(f, node)
 	end
 	f.select:SetShown(self.selProfileAddons and self.selProfileAddons[name])
 
-	local loadable, reason = C_AddOns.IsAddOnLoadable(index, self.addonCharacter)
+	local loadable, reason = C_AddOns.IsAddOnLoadable(index, self.charName)
 	local checkboxState = C_AddOns.GetAddOnEnableState(index, self.addonCharacter)
 	local charCheckboxState = C_AddOns.GetAddOnEnableState(index, self.charName)
 	local enabled = checkboxState > Enum.AddOnEnableState.None
+	local charEnabled = charCheckboxState > Enum.AddOnEnableState.None
 	local loaded = C_AddOns.IsAddOnLoaded(index)
 	f.loaded = loaded
 
 	local titleText = self.config.showNameInsteadOfTitle and name or title
-	if loadable or enabled and (reason == "DEP_DEMAND_LOADED" or reason == "DEMAND_LOADED") then
+	if loadable or charEnabled and (reason == "DEP_DEMAND_LOADED" or reason == "DEMAND_LOADED") then
 		f.title:SetTextColor(1, .78, 0)
-	elseif enabled and reason ~= "DEP_DISABLED" then
+	elseif charEnabled and reason ~= "DEP_DISABLED" then
 		f.title:SetTextColor(1, .1, .1)
 		titleText = titleText:gsub("|[Cc]%x%x%x%x%x%x%x%x", ""):gsub("|[Rr]", "")
 	else
@@ -961,14 +954,17 @@ function listFrame:normalInit(f, node)
 		f.check:SetChecked(enabled)
 		if enabled then
 			if checkboxState ~= Enum.AddOnEnableState.All then
-				if charCheckboxState > Enum.AddOnEnableState.None then
+				if charEnabled then
+					f.check.tooltip = L["Enabled for current character"]
 					f.check.CheckedTexture:SetDesaturated(false)
 					f.check.CheckedTexture:SetVertexColor(0,1,0)
 				else
+					f.check.tooltip = L["Enabled for some other characters"]
 					f.check.CheckedTexture:SetDesaturated(true)
 					f.check.CheckedTexture:SetVertexColor(1,1,1)
 				end
 			else
+				f.check.tooltip = nil
 				f.check.CheckedTexture:SetDesaturated(false)
 				f.check.CheckedTexture:SetVertexColor(1,1,1)
 			end
@@ -988,10 +984,7 @@ function listFrame:normalInit(f, node)
 	else
 		f.loadButton:Hide()
 		f.status:Show()
-		if (charCheckboxState > Enum.AddOnEnableState.None ~= self.startStatus[index] and (reason == "" or reason == "DISABLED")
-			or reason ~= "INTERFACE_VERSION" and self.outOfDateIndexes[index]
-			or reason == "INTERFACE_VERSION" and not self.outOfDateIndexes[index])
-		and (charCheckboxState > Enum.AddOnEnableState.None or loaded) then
+		if reason ~= "DEMAND_LOADED" and reason ~= "DEP_DEMAND_LOADED" and (charEnabled and loadable) ~= loaded then
 			f.loaded = false
 			f.status:SetText(RED_FONT_COLOR:WrapTextInColorCode(REQUIRES_RELOAD))
 		end

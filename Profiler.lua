@@ -5,15 +5,15 @@ local ProfilerGetAddOnMetric = C_AddOnProfiler.GetAddOnMetric
 local ProfilerGetOverallMetric = C_AddOnProfiler.GetOverallMetric
 
 
-listFrame.profilerEnumRecentAverageTime = Enum.AddOnProfilerMetric.RecentAverageTime
-listFrame.profilerEnumSessionAverageTime = Enum.AddOnProfilerMetric.SessionAverageTime
-listFrame.profilerEnumPeakTime = Enum.AddOnProfilerMetric.PeakTime
-listFrame.profilerEnumEncounterAverageTime = Enum.AddOnProfilerMetric.EncounterAverageTime
-listFrame.profilerEnumCountTimeOver5Ms = Enum.AddOnProfilerMetric.CountTimeOver5Ms
-listFrame.profilerEnumCountTimeOver10Ms = Enum.AddOnProfilerMetric.CountTimeOver10Ms
-listFrame.profilerEnumCountTimeOver50Ms = Enum.AddOnProfilerMetric.CountTimeOver50Ms
-listFrame.profilerEnumCountTimeOver100Ms = Enum.AddOnProfilerMetric.CountTimeOver100Ms
-listFrame.profilerEnumCountTimeOver500Ms = Enum.AddOnProfilerMetric.CountTimeOver500Ms
+listFrame.enumRecentAverageTime = Enum.AddOnProfilerMetric.RecentAverageTime
+listFrame.enumSessionAverageTime = Enum.AddOnProfilerMetric.SessionAverageTime
+listFrame.enumPeakTime = Enum.AddOnProfilerMetric.PeakTime
+listFrame.enumEncounterAverageTime = Enum.AddOnProfilerMetric.EncounterAverageTime
+listFrame.enumCountTimeOver5Ms = Enum.AddOnProfilerMetric.CountTimeOver5Ms
+listFrame.enumCountTimeOver10Ms = Enum.AddOnProfilerMetric.CountTimeOver10Ms
+listFrame.enumCountTimeOver50Ms = Enum.AddOnProfilerMetric.CountTimeOver50Ms
+listFrame.enumCountTimeOver100Ms = Enum.AddOnProfilerMetric.CountTimeOver100Ms
+listFrame.enumCountTimeOver500Ms = Enum.AddOnProfilerMetric.CountTimeOver500Ms
 
 
 local function getColorPercent(percent)
@@ -74,10 +74,10 @@ function listFrame:updatePerformance()
 	self.performance:SetShown(enabled)
 	if not enabled then return end
 
-	self:updateOverallMetric(self.currentCPU.bottomStr, self.profilerEnumRecentAverageTime)
-	self:updateOverallMetric(self.averageCPU.bottomStr, self.profilerEnumSessionAverageTime)
-	self:updateOverallMetric(self.peakCPU.bottomStr, self.profilerEnumPeakTime)
-	self:updateOverallMetric(self.encounterCPU.bottomStr, self.profilerEnumEncounterAverageTime)
+	self:updateOverallMetric(self.currentCPU.bottomStr, self.enumRecentAverageTime)
+	self:updateOverallMetric(self.averageCPU.bottomStr, self.enumSessionAverageTime)
+	self:updateOverallMetric(self.peakCPU.bottomStr, self.enumPeakTime)
+	self:updateOverallMetric(self.encounterCPU.bottomStr, self.enumEncounterAverageTime)
 end
 
 
@@ -85,13 +85,13 @@ function listFrame:updateAddonMetrics(f)
 	local name = f.name
 	local str = ""
 	if self:isProfilerEnabled() then
-		str = self.currentStr:format(self:getAddonMetricPercent(name, self.profilerEnumRecentAverageTime))
+		str = self.currentStr:format(self:getAddonMetricPercent(name, self.enumRecentAverageTime))
 		if self.config.cpuSortBy == "average" then
-			str = self.averageStr:format(str, self:getAddonMetricPercent(name, self.profilerEnumSessionAverageTime))
+			str = self.averageStr:format(str, self:getAddonMetricPercent(name, self.enumSessionAverageTime))
 		elseif self.config.cpuSortBy == "peak" then
-			str = self.peakStr:format(str, self:getAddonMetricPercent(name, self.profilerEnumPeakTime))
+			str = self.peakStr:format(str, self:getAddonMetricPercent(name, self.enumPeakTime))
 		elseif self.config.cpuSortBy == "encounter" then
-			str = self.encounterStr:format(str, self:getAddonMetricPercent(name, self.profilerEnumEncounterAverageTime))
+			str = self.encounterStr:format(str, self:getAddonMetricPercent(name, self.enumEncounterAverageTime))
 		end
 	end
 	f.status:SetText(str)

@@ -18,6 +18,8 @@ L["Left+Alt to lock/unclock"] = "Alt+ЛКМ заблокировать/разб�
 L["Right For more options"] = "ПКМ для контекстного меню"
 L["Left click to open the Addon Manargl"] = "ЛКМ открыть Addon Manargl"
 L["Right click to open the Profile Menu"] = "ПКМ открыть меню профилей"
+L["Enabled for current character"] = "Включено для текущего персонажа"
+L["Enabled for some other characters"] = "Включено для некоторых других персонажей"
 -- CONTEXTMENU
 L["Lock addon"] = "Заблокировать аддон"
 L["Enalbe with children"] = "Включить с дочерними"

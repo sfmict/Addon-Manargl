@@ -325,18 +325,33 @@ function listFrame:enableAddonsTree(profile, enabled, context)
 end
 
 
+function listFrame:loadProfile(profile, reloadCheck)
+	for i = 1, C_AddOns.GetNumAddOns() do self:enableAddon(self.nameByIndex[i], false) end
+	self:enableAddonsTree(profile, true)
+
+	if reloadCheck and self:hasAnyChanges() then
+		ReloadUI()
+	elseif self:IsShown() then
+		self:updateFilters()
+		self:updateReloadButton()
+	end
+end
+
+
+function listFrame:loadProfileByName(name, reloadCheck)
+	for i, profile in ipairs(self.profiles) do
+		if profile.name == name then
+			self:loadProfile(profile, reloadCheck)
+			break
+		end
+	end
+end
+
+
 function listFrame:loadProfileAddons(profile, reloadCheck)
 	local actionText = reloadCheck and L["Load %s profile and reload UI?"] or L["Load %s profile?"]
 	StaticPopup_Show(self.addonName.."CUSTOM_OK_CANCEL", actionText:format(NORMAL_FONT_COLOR:WrapTextInColorCode(profile.name)), nil, function()
-		for i = 1, C_AddOns.GetNumAddOns() do self:enableAddon(self.nameByIndex[i], false) end
-		self:enableAddonsTree(profile, true)
-
-		if self:IsShown() then
-			self:updateFilters()
-			self:updateReloadButton()
-		end
-
-		if reloadCheck and self:hasAnyChanges() then ReloadUI() end
+		self:loadProfile(profile, reloadCheck)
 	end)
 end
 
@@ -446,12 +461,12 @@ end
 
 
 function listFrame:getProfilesWithAddon(name)
-	local str = ""
+	local list = {}
 	for i = 1, #self.profiles do
 		local profile = self.profiles[i]
 		if profile.addons[name] then
-			str = str..", "..profile.name
+			list[#list + 1] = profile.name
 		end
 	end
-	return str:sub(3)
+	return table.concat(list, ", ")
 end

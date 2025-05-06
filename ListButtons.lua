@@ -121,6 +121,14 @@ AddonMgrListNormalMixin = {}
 
 
 do
+	local function onEnter(btn)
+		if not btn.tooltip then return end
+		GameTooltip:SetOwner(btn, "ANCHOR_TOP")
+		GameTooltip:SetText(btn.tooltip)
+		GameTooltip:Show()
+	end
+
+
 	local function addonToggle(btn, button)
 		local parent = btn:GetParent()
 		if button == "LeftButton" then
@@ -153,7 +161,8 @@ do
 
 	function AddonMgrListNormalMixin:onLoad()
 		self.check:SetScript("OnClick", addonToggle)
-		self.check:SetPropagateMouseMotion(true)
+		self.check:SetScript("OnEnter", onEnter)
+		self.check:SetScript("OnLeave", GameTooltip_Hide)
 		self.loadButton:SetWidth(self.loadButton:GetTextWidth() + 20)
 		self.loadButton:SetScript("OnClick", loadAddon)
 	end

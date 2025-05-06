@@ -54,8 +54,6 @@ C_Timer.After(0, function()
 			local title = C_AddOns.GetAddOnMetadata(addon, "Title")
 			local version  = C_AddOns.GetAddOnMetadata(addon, "Version")
 			tooltip:SetText(("%s (|cffff7f3f%s|r)"):format(title, version))
-			tooltip:AddLine(listFrame.LEFT_MOUSE_ICON..L["Left click to open the Addon Manargl"])
-			tooltip:AddLine(listFrame.RIGHT_MOUSE_ICON..L["Right click to open the Profile Menu"])
 
 			local totalMem = 0
 			local maxAddons = 10
@@ -87,9 +85,18 @@ C_Timer.After(0, function()
 				local name = C_AddOns.GetAddOnInfo(topAddons[i].index)
 				tooltip:AddDoubleLine(name, listFrame:formatMemory(topAddons[i].mem), 1,1,1,1,1,1)
 			end
+
+			tooltip:AddLine(" ")
+
+			tooltip:AddLine(listFrame.LEFT_MOUSE_ICON..L["Left click to open the Addon Manargl"])
+			if #listFrame.profiles ~= 0 then
+				tooltip:AddLine(listFrame.RIGHT_MOUSE_ICON..L["Right click to open the Profile Menu"])
+			end
 		end,
 	})
-	LibStub("LibDBIcon-1.0"):Register(addon, ldb_icon, listFrame.db.omb)
+	local ldbi = LibStub("LibDBIcon-1.0")
+	ldbi:Register(addon, ldb_icon, listFrame.db.omb)
+	menu:ddHideWhenButtonHidden(ldbi:GetMinimapButton(addon))
 end)
 
 
