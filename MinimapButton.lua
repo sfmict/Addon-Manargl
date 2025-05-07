@@ -35,6 +35,16 @@ menu:ddSetInitFunc(function(dd, level)
 end)
 
 
+local function addOddLine(tooltip, text1, text2)
+	tooltip:AddDoubleLine(text1, text2, .8,1,1,.8,1,1)
+end
+
+
+local function addEvenLine(tooltip, text1, text2)
+	tooltip:AddDoubleLine(text1, text2, 1,1,1,1,1,1)
+end
+
+
 C_Timer.After(0, function()
 	local ldb_icon = LibStub("LibDataBroker-1.1"):NewDataObject(addon, {
 		type = "launcher",
@@ -49,6 +59,7 @@ C_Timer.After(0, function()
 				menu:ddCloseMenus()
 				addonToggle()
 			end
+			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 		end,
 		OnTooltipShow = function(tooltip)
 			local title = C_AddOns.GetAddOnMetadata(addon, "Title")
@@ -83,7 +94,9 @@ C_Timer.After(0, function()
 
 			for i = 1, #topAddons do
 				local name = C_AddOns.GetAddOnInfo(topAddons[i].index)
-				tooltip:AddDoubleLine(name, listFrame:formatMemory(topAddons[i].mem), 1,1,1,1,1,1)
+				local mem = listFrame:formatMemory(topAddons[i].mem)
+				if i % 2 == 0 then addEvenLine(tooltip, name, mem)
+				else addOddLine(tooltip, name, mem) end
 			end
 
 			tooltip:AddLine(" ")
@@ -102,4 +115,5 @@ end)
 
 SLASH_ADDONMRGL1 = "/addonmrgl"
 SLASH_ADDONMRGL2 = "/mrgl"
+SLASH_ADDONMRGL3 = "/am"
 SlashCmdList["ADDONMRGL"] = addonToggle

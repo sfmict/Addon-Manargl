@@ -33,17 +33,17 @@ function listFrame:getAddonMetric(name, metric)
 	local addonVal = ProfilerGetAddOnMetric(name, metric)
 	local appVal = ProfilerGetApplicationMetric(metric)
 
-	if appVal <= 0 then return end
-	return addonVal / appVal * 100
+	if appVal <= 0 then return 0 end
+	return addonVal / appVal * 100, addonVal
 end
 
 
 function listFrame:getAddonMetricPercent(name, metric)
-	local val = self:getAddonMetric(name, metric) or 0
+	local val, ms = self:getAddonMetric(name, metric)
 	if val < self.accuracyDelta then
-		return self.accuracyZeroStr
+		return self.accuracyZeroStr, ms
 	else
-		return getColorPercent(val)
+		return getColorPercent(val), ms
 	end
 end
 
@@ -53,14 +53,16 @@ function listFrame:getAddonMetricCount(name, metric)
 end
 
 
-function listFrame:updateOverallMetric(fontString, metric)
+function listFrame:updateOverallMetric(btn, metric)
 	local appVal = ProfilerGetApplicationMetric(metric)
 	if appVal <= 0 then
-		fontString:SetText("--")
+		btn.bottomStr:SetText("--")
 		return
 	end
 	local overallVal = ProfilerGetOverallMetric(metric)
-	fontString:SetText(getColorPercent(overallVal / appVal * 100))
+	btn.bottomStr:SetText(getColorPercent(overallVal / appVal * 100))
+	btn.ms = overallVal
+	if btn:IsMouseOver() then btn:GetScript("OnEnter")(btn) end
 end
 
 
@@ -74,10 +76,10 @@ function listFrame:updatePerformance()
 	self.performance:SetShown(enabled)
 	if not enabled then return end
 
-	self:updateOverallMetric(self.currentCPU.bottomStr, self.enumRecentAverageTime)
-	self:updateOverallMetric(self.averageCPU.bottomStr, self.enumSessionAverageTime)
-	self:updateOverallMetric(self.peakCPU.bottomStr, self.enumPeakTime)
-	self:updateOverallMetric(self.encounterCPU.bottomStr, self.enumEncounterAverageTime)
+	self:updateOverallMetric(self.currentCPU, self.enumRecentAverageTime)
+	self:updateOverallMetric(self.averageCPU, self.enumSessionAverageTime)
+	self:updateOverallMetric(self.peakCPU, self.enumPeakTime)
+	self:updateOverallMetric(self.encounterCPU, self.enumEncounterAverageTime)
 end
 
 

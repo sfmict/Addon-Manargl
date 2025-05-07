@@ -364,14 +364,31 @@ listFrame:SetScript("OnShow", function(self)
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 	end
 
+	local cpuBtnOnEnter = function(btn)
+		if btn.ms then
+			GameTooltip:SetOwner(self.performance, "ANCHOR_NONE")
+			GameTooltip:SetPoint("RIGHT", self.performance, "LEFT", -2, 3)
+			GameTooltip:SetText(L["%.2f ms"]:format(btn.ms))
+			GameTooltip:Show()
+		end
+	end
+
 	self.currentCPU.value = "current"
 	self.currentCPU:SetScript("OnClick", cpuBtnClick)
+	self.currentCPU:SetScript("OnEnter", cpuBtnOnEnter)
+	self.currentCPU:SetScript("OnLeave", GameTooltip_Hide)
 	self.averageCPU.value = "average"
 	self.averageCPU:SetScript("OnClick", cpuBtnClick)
+	self.averageCPU:SetScript("OnEnter", cpuBtnOnEnter)
+	self.averageCPU:SetScript("OnLeave", GameTooltip_Hide)
 	self.peakCPU.value = "peak"
 	self.peakCPU:SetScript("OnClick", cpuBtnClick)
+	self.peakCPU:SetScript("OnEnter", cpuBtnOnEnter)
+	self.peakCPU:SetScript("OnLeave", GameTooltip_Hide)
 	self.encounterCPU.value = "encounter"
 	self.encounterCPU:SetScript("OnClick", cpuBtnClick)
+	self.encounterCPU:SetScript("OnEnter", cpuBtnOnEnter)
+	self.encounterCPU:SetScript("OnLeave", GameTooltip_Hide)
 
 	-- LIST
 	local indent = 16
@@ -474,7 +491,7 @@ function listFrame:onShow()
 	self:updatePerformance()
 	self:updateReloadButton()
 	if self.config.cpuSortBy then
-		self:sort()
+		self:sort(true)
 	else
 		self:updateList()
 	end
@@ -536,7 +553,7 @@ do
 end
 
 
-function listFrame:sort()
+function listFrame:sort(force)
 	local metric, copy
 	if self.config.cpuSortBy then
 		if self.config.cpuSortBy == "current" then
@@ -548,8 +565,10 @@ function listFrame:sort()
 		elseif self.config.cpuSortBy == "encounter" then
 			metric = self.enumEncounterAverageTime
 		end
-		copy = {}
-		for i = 1, #self.sorted do copy[i] = self.sorted[i] end
+		if not force then
+			copy = {}
+			for i = 1, #self.sorted do copy[i] = self.sorted[i] end
+		end
 	end
 
 	sort(self.sorted, function(a, b)
@@ -565,11 +584,8 @@ function listFrame:sort()
 				local ma = self:getAddonMetric(nameA, metric)
 				local mb = self:getAddonMetric(nameB, metric)
 
-				if ma and mb then
-					if ma > mb then return true
-					elseif ma < mb then return false end
-				elseif ma then return true
-				elseif mb then return false end
+				if ma > mb then return true
+				elseif ma < mb then return false end
 
 			elseif loadedA then return true
 			elseif loadedB then return false end
@@ -591,7 +607,7 @@ function listFrame:sort()
 		return a < b
 	end)
 
-	if self.config.cpuSortBy then
+	if self.config.cpuSortBy and not force then
 		for i = 1, #self.sorted do
 			if self.sorted[i] ~= copy[i] then
 				self:updateFilters()
@@ -623,7 +639,7 @@ function listFrame:setListGroup()
 
 	if not self.config.cpuSortBy and self.config.listGroup ~= "none" then
 		if self.config.listGroup == "dep" then
-		self:setChildByDeps()
+			self:setChildByDeps()
 		elseif self.config.listGroup == "treeDep" then
 			self:setChildByTreeDeps()
 		elseif self.config.listGroup == "group" then
@@ -787,13 +803,17 @@ do
 		GameTooltip:AddDoubleLine(left, right, 1, .78, 0, 1, 1, 1, wrap or false)
 	end
 
-
-	local function addLineNotEmpty(text, val)
+	local str = "%s: |Cffffffff%s|r"
+	local msStr = "%s: |Cffffffff%s|r |cff808080("..L["%.2f ms"]..")|r"
+	local function addLineNotEmpty(text, val, ms)
 		if val and val ~= "" then
-			GameTooltip:AddLine(("%s: |Cffffffff%s|r"):format(text, val))
+			if ms then
+				GameTooltip:AddLine(msStr:format(text, val, ms))
+			else
+				GameTooltip:AddLine(str:format(text, val))
+			end
 		end
 	end
-
 
 	function listFrame:updateTooltip()
 		if not self.tooltipIndex then return end
@@ -855,11 +875,8 @@ end
 function listFrame:hasAnyChanges()
 	for i = 1, C_AddOns.GetNumAddOns() do
 		local loadable, reason = C_AddOns.IsAddOnLoadable(i, self.charName)
-		if reason ~= "DEMAND_LOADED" and reason ~= "DEP_DEMAND_LOADED" then
-			local enabled = C_AddOns.GetAddOnEnableState(i, self.charName) > Enum.AddOnEnableState.None
-			if (enabled and loadable) ~= C_AddOns.IsAddOnLoaded(i) then
-				return true
-			end
+		if reason ~= "DEMAND_LOADED" and reason ~= "DEP_DEMAND_LOADED" and loadable ~= C_AddOns.IsAddOnLoaded(i) then
+			return true
 		end
 	end
 	return false
@@ -895,16 +912,14 @@ function listFrame:normalInit(f, node)
 		local iconTexture = C_AddOns.GetAddOnMetadata(index, "IconTexture")
 		local iconAtlas = C_AddOns.GetAddOnMetadata(index, "IconAtlas")
 
-		if not iconTexture and not iconAtlas then
-			iconTexture = self.config.showNoIcon and [[Interface\ICONS\INV_Misc_QuestionMark]]
+		if self.config.showNoIcon and not (iconTexture or iconAtlas) then
+			iconTexture = [[Interface\ICONS\INV_Misc_QuestionMark]]
 		end
 
 		if iconTexture then
 			f.icon:SetTexture(iconTexture)
-		elseif iconAtlas then
-			f.icon:SetAtlas(iconAtlas)
 		else
-			f.icon:SetTexture()
+			f.icon:SetAtlas(iconAtlas)
 		end
 
 		f.icon:Show()
@@ -915,14 +930,13 @@ function listFrame:normalInit(f, node)
 
 	local loadable, reason = C_AddOns.IsAddOnLoadable(index, self.charName)
 	local checkboxState = C_AddOns.GetAddOnEnableState(index, self.addonCharacter)
-	local charCheckboxState = C_AddOns.GetAddOnEnableState(index, self.charName)
 	local enabled = checkboxState > Enum.AddOnEnableState.None
-	local charEnabled = charCheckboxState > Enum.AddOnEnableState.None
+	local charEnabled = reason ~= "DISABLED"
 	local loaded = C_AddOns.IsAddOnLoaded(index)
 	f.loaded = loaded
 
 	local titleText = self.config.showNameInsteadOfTitle and name or title
-	if loadable or charEnabled and (reason == "DEP_DEMAND_LOADED" or reason == "DEMAND_LOADED") then
+	if loadable or charEnabled and (reason == "DEMAND_LOADED" or reason == "DEP_DEMAND_LOADED") then
 		f.title:SetTextColor(1, .78, 0)
 	elseif charEnabled and reason ~= "DEP_DISABLED" then
 		f.title:SetTextColor(1, .1, .1)
@@ -971,22 +985,25 @@ function listFrame:normalInit(f, node)
 		end
 	end
 
-	if loaded then
-		self:updateAddonMetrics(f)
-	else
-		f.status:SetText(reason and _G["ADDON_"..reason] or "")
-	end
-
 	if not loaded and reason == "DEMAND_LOADED" then
-		local isAddonLoadOnDemand = self:isAddonLoadOnDemand(index)
-		f.loadButton:SetShown(isAddonLoadOnDemand)
-		f.status:SetShown(not isAddonLoadOnDemand)
+		if self:isAddonLoadOnDemand(index) then
+			f.loadButton:Show()
+			f.status:Hide()
+		else
+			f.loadButton:Hide()
+			f.status:Show()
+			f.status:SetText(_G["ADDON_"..reason])
+		end
 	else
 		f.loadButton:Hide()
 		f.status:Show()
-		if reason ~= "DEMAND_LOADED" and reason ~= "DEP_DEMAND_LOADED" and (charEnabled and loadable) ~= loaded then
+		if loadable ~= loaded and reason ~= "DEMAND_LOADED" and reason ~= "DEP_DEMAND_LOADED" then
 			f.loaded = false
 			f.status:SetText(RED_FONT_COLOR:WrapTextInColorCode(REQUIRES_RELOAD))
+		elseif loaded then
+			self:updateAddonMetrics(f)
+		else
+			f.status:SetText(reason and _G["ADDON_"..reason] or "")
 		end
 	end
 end
@@ -1007,17 +1024,17 @@ end
 
 
 do
-	local function addChilds(self, pNode, pIndex)
-		for i = 1, #self.childByPIndex[pIndex] do
-			local index = self.childByPIndex[pIndex][i]
-				local node = pNode:Insert({index = index, isParent = self.childByPIndex[index] and true})
-				if self.childByPIndex[index] then
-					node:SetCollapsed(self:isCollapsed(index))
-					addChilds(self, node, index)
-				end
+	local function addChilds(self, pNode, pList)
+		for i = 1, #pList do
+			local index = pList[i]
+			local list = self.childByPIndex[index]
+			local node = pNode:Insert({index = index, isParent = list and true})
+			if list then
+				node:SetCollapsed(self:isCollapsed(index))
+				addChilds(self, node, list)
+			end
 		end
 	end
-
 
 	function listFrame:updateData()
 		self.dataProvider = CreateTreeDataProvider()
@@ -1025,10 +1042,11 @@ do
 		for i = 1, #self.filtred do
 			local index = self.filtred[i]
 			if not self.hasParentByIndex[index] then
-				local node = self.dataProvider:Insert({index = index, isParent = self.childByPIndex[index] and true})
-				if self.childByPIndex[index] then
+				local list = self.childByPIndex[index]
+				local node = self.dataProvider:Insert({index = index, isParent = list and true})
+				if list then
 					node:SetCollapsed(self:isCollapsed(index))
-					addChilds(self, node, index)
+					addChilds(self, node, list)
 				end
 			end
 		end

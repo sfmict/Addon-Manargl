@@ -128,7 +128,6 @@ do
 		GameTooltip:Show()
 	end
 
-
 	local function addonToggle(btn, button)
 		local parent = btn:GetParent()
 		if button == "LeftButton" then
@@ -152,12 +151,10 @@ do
 		end
 	end
 
-
 	local function loadAddon(btn)
 		C_AddOns.LoadAddOn(btn:GetParent().name)
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 	end
-
 
 	function AddonMgrListNormalMixin:onLoad()
 		self.check:SetScript("OnClick", addonToggle)
