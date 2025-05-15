@@ -25,6 +25,7 @@ function listFrame:ADDON_LOADED(addonName)
 	self.db.depCollapsed = self.db.depCollapsed or {}
 	self.db.locked = self.db.locked or {}
 	self.db.omb = self.db.omb or {}
+	self.db.autoLoadProfiles = self.db.autoLoadProfiles or {}
 
 	self.config = self.db.config
 	self.config.listGroup = self.config.listGroup or "dep"
@@ -740,9 +741,9 @@ end
 function listFrame:enableAddon(name, enabled)
 	if self.locked[name] then return end
 	if enabled then
-		C_AddOns.EnableAddOn(name, listFrame.addonCharacter)
+		C_AddOns.EnableAddOn(name, self.addonCharacter)
 	else
-		C_AddOns.DisableAddOn(name, listFrame.addonCharacter)
+		C_AddOns.DisableAddOn(name, self.addonCharacter)
 	end
 end
 
@@ -771,7 +772,7 @@ function listFrame:enableAddonChildren(name, enabled)
 end
 
 
-function listFrame:getAddonDepsString(name, reason)
+function listFrame:getAddonDepsString(name)
 	local deps = {C_AddOns.GetAddOnDependencies(name)}
 	if #deps == 0 then return "" end
 	for i = 1, #deps do
@@ -780,7 +781,7 @@ function listFrame:getAddonDepsString(name, reason)
 		local color = HIGHLIGHT_FONT_COLOR
 		if reason == "MISSING" then
 			color = RED_FONT_COLOR
-		elseif C_AddOns.GetAddOnEnableState(dName, self.charName) > Enum.AddOnEnableState.None then
+		elseif reason ~= "DISABLED" then
 			color = GREEN_FONT_COLOR
 		end
 		deps[i] = color:WrapTextInColorCode(dName)

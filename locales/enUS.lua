@@ -32,6 +32,8 @@ L["Rest"] = "Rest"
 -- PROFILES
 L["Profiles"] = "Profiles"
 L["Characters"] = "Characters"
+L["Autoload profile"] = "Autoload profile"
+L["Character Specific"] = "Character Specific"
 L["Load"] = "Load"
 L["Save"] = "Save"
 L["Enable Addons"] = "Enable Addons"

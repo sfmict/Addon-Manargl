@@ -100,8 +100,85 @@ function listFrame:PLAYER_LOGOUT()
 	end
 	curCharProfile.class = select(2, UnitClass("player"))
 	self:saveProfileAddons(curCharProfile)
+
+	if AddonMgrAutoLoadChar and not next(AddonMgrAutoLoadChar) then
+		AddonMgrAutoLoadChar = nil
+	end
 end
 listFrame:RegisterEvent("PLAYER_LOGOUT")
+
+
+-- AUTOLOAD PROFILES
+local function requireLoadProfile(profile, context)
+	context = context or {}
+	if context[profile] then return end
+	context[profile] = true
+	for addonName in next, profile.addons do
+		local loadable, reason = C_AddOns.IsAddOnLoadable(addonName, listFrame.charName)
+		if reason == "DISABLED" then return true end
+	end
+	if profile.loadProfiles then
+		for name in next, profile.loadProfiles do
+			local lProfile = listFrame:getProfileByName(name)
+			if lProfile and requireLoadProfile(lProfile, context) then return true end
+		end
+	end
+end
+
+
+local actualInstances
+local function setActualInstances()
+	if actualInstances ~= nil then return end
+	local numTiers = EJ_GetNumTiers()
+	if numTiers < 1 then
+		actualInstances = false
+		return
+	end
+	local backupTier = EJ_GetCurrentTier()
+	actualInstances = {}
+
+	for i = numTiers > 10 and numTiers - 1 or numTiers, numTiers do
+		EJ_SelectTier(i)
+		for j = 1, 2 do
+			local showRaid = j == 2
+			local index = 1
+			local jInstanceID = EJ_GetInstanceByIndex(index, showRaid)
+			while jInstanceID do
+				--EJ_SelectInstance(jInstanceID)
+				local _,_,_,_,_,_,_,_,_, instanceID = EJ_GetInstanceInfo(jInstanceID)
+				actualInstances[instanceID] = true
+				index = index + 1
+				jInstanceID = EJ_GetInstanceByIndex(index, showRaid)
+			end
+		end
+	end
+
+	EJ_SelectTier(backupTier)
+end
+
+
+function listFrame:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
+	if isInitialLogin or isReloadingUi then
+		self:setAutoLoadObj()
+		if isReloadingUi then return end
+	end
+	if not next(self.autoLoadProfiles) then return end
+	setActualInstances()
+
+	C_Timer.After(0, function()
+		local _, instanceType, difficultyID, _,_,_,_, instanceID = GetInstanceInfo()
+		local pName = self.autoLoadProfiles[instanceType]
+
+		if pName and actualInstances and (instanceType == "party" or instanceType == "raid") and not actualInstances[instanceID]
+		and difficultyID ~= 24 and difficultyID ~= 33 then return end -- Timewalking
+
+		local profile = self:getProfileByName(pName or self.autoLoadProfiles.none)
+		if profile and requireLoadProfile(profile) then
+			self:loadProfileAddons(profile, true)
+		end
+	end)
+end
+listFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 
 
 -- DROPDOWN
@@ -119,8 +196,13 @@ listFrame:HookScript("OnShow", function(self)
 			info.keepShownOnClick = true
 			info.notCheckable = true
 			info.hasArrow = true
+
 			info.text = L["Characters"]
 			info.value = "chars"
+			dd:ddAddButton(info, level)
+
+			info.text = L["Autoload profile"]
+			info.value = "autoload"
 			dd:ddAddButton(info, level)
 
 			if #self.profiles ~= 0 then
@@ -205,7 +287,46 @@ listFrame:HookScript("OnShow", function(self)
 			end
 			dd:ddAddButton(info, level)
 
-		elseif type(value) == "table" and level == 2 then
+		elseif value == "autoload" then
+			info.keepShownOnClick = true
+			info.notCheckable = true
+			info.hasArrow = true
+
+			info.text = WORLD
+			info.value = "none"
+			dd:ddAddButton(info, level)
+
+			info.text = TRACKER_HEADER_DUNGEON
+			info.value = "party"
+			dd:ddAddButton(info, level)
+
+			info.text = RAID
+			info.value = "raid"
+			dd:ddAddButton(info, level)
+
+			info.text = ARENA
+			info.value = "arena"
+			dd:ddAddButton(info, level)
+
+			info.text = BATTLEGROUND
+			info.value = "pvp"
+			dd:ddAddButton(info, level)
+
+			info.list = nil
+			info.hasArrow = nil
+			info.notCheckable = nil
+			info.value = nil
+			info.isNotRadio = true
+
+			info.text = L["Character Specific"]
+			info.func = function(_,_,_, checked)
+				self.config.autoLoadChar = checked
+				self:setAutoLoadObj()
+			end
+			info.checked = self.config.autoLoadChar
+			dd:ddAddButton(info, level)
+
+		elseif level == 2 and type(value) == "table" then
 			info.notCheckable = true
 			info.isTitle = true
 			info.text = value.name
@@ -253,36 +374,82 @@ listFrame:HookScript("OnShow", function(self)
 			dd:ddAddButton(info, level)
 
 		elseif level == 3 then
-			local list = {}
-			local empty = true
+			if type(value) == "string" then
+				if #self.profiles == 0 then
+					info.notCheckable = true
+					info.disabled = true
+					info.text = EMPTY
+					dd:ddAddButton(info, level)
+					return
+				end
 
-			local func = function(btn, _,_, checked) self:setLoadProfiles(value, btn.value, checked) end
+				local func = function(btn)
+					self.autoLoadProfiles[value] = btn.value
+					dd:ddRefresh(level)
+				end
+				local check = function(btn) return btn.value == self.autoLoadProfiles[value] end
 
-			for i, profile in ipairs(self.profiles) do
-				if profile ~= value then
-					empty = false
+				local list = {
+					{
+						keepShownOnClick = true,
+						text = NONE,
+						func = func,
+						checked = check,
+					},
+				}
+
+				for i, profile in ipairs(self.profiles) do
 					list[#list + 1] = {
 						keepShownOnClick = true,
-						isNotRadio = true,
 						text = profile.name,
 						value = profile.name,
 						func = func,
-						checked = value.loadProfiles and value.loadProfiles[profile.name],
+						checked = check,
 					}
 				end
-			end
 
-			if empty then
-				info.notCheckable = true
-				info.disabled = true
-				info.text = EMPTY
-			else
 				info.list = list
+				dd:ddAddButton(info, level)
+
+			else
+				local list = {}
+				local func = function(btn, _,_, checked) self:setLoadProfiles(value, btn.value, checked) end
+
+				for i, profile in ipairs(self.profiles) do
+					if profile ~= value then
+						list[#list + 1] = {
+							keepShownOnClick = true,
+							isNotRadio = true,
+							text = profile.name,
+							value = profile.name,
+							func = func,
+							checked = value.loadProfiles and value.loadProfiles[profile.name],
+						}
+					end
+				end
+
+				if #list == 0 then
+					info.notCheckable = true
+					info.disabled = true
+					info.text = EMPTY
+				else
+					info.list = list
+				end
+				dd:ddAddButton(info, level)
 			end
-			dd:ddAddButton(info, level)
 		end
 	end)
 end)
+
+
+function listFrame:setAutoLoadObj()
+	if self.config.autoLoadChar then
+		AddonMgrAutoLoadChar = AddonMgrAutoLoadChar or {}
+		self.autoLoadProfiles = AddonMgrAutoLoadChar
+	else
+		self.autoLoadProfiles = self.db.autoLoadProfiles
+	end
+end
 
 
 function listFrame:saveProfileAddons(profile)
@@ -305,6 +472,15 @@ function listFrame:rewriteProfileAddons(profile)
 end
 
 
+function listFrame:getProfileByName(name)
+	if name then
+		for _, profile in ipairs(self.profiles) do
+			if profile.name == name then return profile end
+		end
+	end
+end
+
+
 function listFrame:enableAddonsTree(profile, enabled, context)
 	context = context or {}
 	if context[profile] then return end
@@ -314,12 +490,8 @@ function listFrame:enableAddonsTree(profile, enabled, context)
 	end
 	if profile.loadProfiles then
 		for name in next, profile.loadProfiles do
-			for _, p in ipairs(self.profiles) do
-				if p.name == name then
-					self:enableAddonsTree(p, enabled, context)
-					break
-				end
-			end
+			local lProfile = self:getProfileByName(name)
+			if lProfile then self:enableAddonsTree(lProfile, enabled, context) end
 		end
 	end
 end
@@ -327,30 +499,35 @@ end
 
 function listFrame:loadProfile(profile, reloadCheck)
 	for i = 1, C_AddOns.GetNumAddOns() do self:enableAddon(self.nameByIndex[i], false) end
-	self:enableAddonsTree(profile, true)
+	local context = self:enableAddonsTree(profile, true)
 
-	if reloadCheck and self:hasAnyChanges() then
-		ReloadUI()
-	elseif self:IsShown() then
+	if reloadCheck then
+		if self:hasAnyChanges() then
+			ReloadUI()
+			return
+		end
+		C_AddOns.SaveAddOns()
+	end
+
+	if self:IsShown() then
 		self:updateFilters()
 		self:updateReloadButton()
 	end
 end
 
 
-function listFrame:loadProfileByName(name, reloadCheck)
-	for i, profile in ipairs(self.profiles) do
-		if profile.name == name then
-			self:loadProfile(profile, reloadCheck)
-			break
-		end
+function listFrame:loadProfileByName(name, reloadCheck, hwEvent)
+	local profile = self:getProfileByName(name)
+	if profile then
+		if hwEvent then self:loadProfile(profile, reloadCheck)
+		else self:loadProfileAddons(profile, reloadCheck) end
 	end
 end
 
 
 function listFrame:loadProfileAddons(profile, reloadCheck)
 	local actionText = reloadCheck and L["Load %s profile and reload UI?"] or L["Load %s profile?"]
-	StaticPopup_Show(self.addonName.."CUSTOM_OK_CANCEL", actionText:format(NORMAL_FONT_COLOR:WrapTextInColorCode(profile.name)), nil, function()
+	local dialog = StaticPopup_Show(self.addonName.."CUSTOM_OK_CANCEL", actionText:format(NORMAL_FONT_COLOR:WrapTextInColorCode(profile.name)), nil, function()
 		self:loadProfile(profile, reloadCheck)
 	end)
 end
@@ -379,13 +556,12 @@ function listFrame:createProfile()
 		local text = popup.editBox:GetText()
 		popup:Hide()
 		if text and text ~= "" then
-			for i, profile in ipairs(self.profiles) do
-				if profile.name == text then
-					lastProfileName = text
-					profilePopupAction = self.createProfile
-					StaticPopup_Show(self.addonName.."PROFILE_EXISTS")
-					return
-				end
+			local profile = self:getProfileByName(text)
+			if profile then
+				lastProfileName = text
+				profilePopupAction = self.createProfile
+				StaticPopup_Show(self.addonName.."PROFILE_EXISTS")
+				return
 			end
 			local profile = {name = text, addons = {}}
 			self:saveProfileAddons(profile)
@@ -405,13 +581,12 @@ function listFrame:editProfile(editProfile)
 		local text = popup.editBox:GetText()
 		popup:Hide()
 		if text and text ~= editProfile.name and text ~= "" then
-			for _, profile in ipairs(self.profiles) do
-				if profile.name == text then
-					lastProfileName = text
-					profilePopupAction = self.editProfile
-					StaticPopup_Show(self.addonName.."PROFILE_EXISTS", nil, nil, editProfile)
-					return
-				end
+			local profile = self:getProfileByName(text)
+			if profile then
+				lastProfileName = text
+				profilePopupAction = self.editProfile
+				StaticPopup_Show(self.addonName.."PROFILE_EXISTS", nil, nil, editProfile)
+				return
 			end
 			editProfile.name = text
 			sort(self.profiles, function(a, b) return a.name < b.name end)
@@ -433,7 +608,8 @@ function listFrame:removeProfile(removeProfile, profiles)
 					self.selProfileAddons = nil
 					self:updateList()
 				end
-				break
+			else
+				self:setLoadProfiles(profile, removeProfile.name, false)
 			end
 		end
 	end)

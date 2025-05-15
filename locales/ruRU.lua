@@ -35,6 +35,8 @@ L["Rest"] = "Остальные"
 -- PROFILES
 L["Profiles"] = "Профили"
 L["Characters"] = "Персонажи"
+L["Autoload profile"] = "Автозагрузка профиля"
+L["Character Specific"] = "Для персонажа"
 L["Load"] = "Загрузить"
 L["Save"] = "Сохранить"
 L["Enable Addons"] = "Включить аддоны"

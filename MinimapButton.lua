@@ -116,4 +116,11 @@ end)
 SLASH_ADDONMRGL1 = "/addonmrgl"
 SLASH_ADDONMRGL2 = "/mrgl"
 SLASH_ADDONMRGL3 = "/am"
-SlashCmdList["ADDONMRGL"] = addonToggle
+SlashCmdList["ADDONMRGL"] = function(text)
+	local load, name = (" "):split(text:lower(), 2)
+	if load == "-lp" then
+		listFrame:loadProfileByName(name, true, true)
+	else
+		addonToggle()
+	end
+end

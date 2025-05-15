@@ -12,11 +12,13 @@ Convenient manarglement of your addons.
 * Filters
 * Grouping addons
 * Profiles
+* Autoload profile
 * And many other flexible settings
 
 ### Commands:
 
-`/addonmrgl` - to open the Addon
+`/addonmrgl` or `/mrgl` or `/am` - to open the Addon
+`/mrgl -lp [profile name]` - to load profile
 
 ![](https://i.imgur.com/J1UWulk.png)
 
