@@ -17,7 +17,7 @@ Convenient manarglement of your addons.
 
 ### Commands:
 
-`/addonmrgl` or `/mrgl` or `/am` - to open the Addon
+`/addonmrgl` or `/mrgl` or `/am` - to open the Addon  
 `/mrgl -lp [profile name]` - to load profile
 
 ![](https://i.imgur.com/J1UWulk.png)
