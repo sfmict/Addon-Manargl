@@ -20,8 +20,8 @@ listFrame:HookScript("OnShow", function(self)
 		button1 = YES,
 		button2 = NO,
 		whileDead = 1,
-		OnAccept = function(self, name) stop(name) end,
-		OnCancel = stop,
+		OnAccept = function(_, name) stop(name) end,
+		OnCancel = function() stop() end,
 	}
 
 	local function continue(inList, popup)
@@ -68,7 +68,7 @@ listFrame:HookScript("OnShow", function(self)
 		selectCallbackByIndex = 1,
 		OnButton1 = function(self) continue(true, self) end,
 		OnButton2 = function(self) continue(false, self) end,
-		OnButton3 = stop,
+		OnButton3 = function() stop() end,
 	}
 	StaticPopup_Show(listFrame.addonName.."SEARCH_YES_NO_STOP", #self.db.searchAddon.enabled + #self.db.searchAddon.disabled, #self.db.searchAddon.justified)
 end)
