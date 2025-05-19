@@ -174,6 +174,16 @@ listFrame:HookScript("OnShow", function(self)
 			info.value = "searchBy"
 			dd:ddAddButton(info, level)
 
+			info.hasArrow = nil
+			info.keepShownOnClick = nil
+			info.text = L["Search for the guilty addon"]
+			info.func = function() self:startSearch() end
+			info.OnTooltipShow = function(btn, tooltip)
+				tooltip:SetText(L["Search for the guilty addon"])
+				tooltip:AddLine(L["SEARCH_ADDON_TOOLTIP"], 1,1,1, true)
+			end
+			dd:ddAddButton(info, level)
+
 		elseif value == "memUpdate" then
 			info.keepShownOnClick = true
 

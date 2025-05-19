@@ -6,6 +6,7 @@ local C_AddOns = C_AddOns
 listFrame.isMainline = WOW_PROJECT_MAINLINE == WOW_PROJECT_ID
 listFrame.LEFT_MOUSE_ICON = C_Texture.GetAtlasInfo("newplayertutorial-icon-mouse-leftbutton") and "|A:newplayertutorial-icon-mouse-leftbutton:0:0|a " or ""
 listFrame.RIGHT_MOUSE_ICON = C_Texture.GetAtlasInfo("newplayertutorial-icon-mouse-rightbutton") and "|A:newplayertutorial-icon-mouse-rightbutton:0:0|a " or ""
+listFrame.MIDDLE_MOUSE_ICON = C_Texture.GetAtlasInfo("newplayertutorial-icon-mouse-middlebutton") and "|A:newplayertutorial-icon-mouse-middlebutton:0:0|a " or ""
 local BANNED = "BANNED"
 local SECURE_PROTECTED = "SECURE_PROTECTED"
 local SECURE = "SECURE"
@@ -208,7 +209,7 @@ listFrame:SetScript("OnShow", function(self)
 		local deps = {C_AddOns.GetAddOnDependencies(i)}
 		for i = 1, #deps do
 			local di = self.indexByName[deps[i]]
-			if di and checkCirc(di) then return end
+			if di ~= nil then checkCirc(di) end
 		end
 		context[i] = nil
 	end
@@ -421,9 +422,7 @@ listFrame:SetScript("OnShow", function(self)
 	self.enableAll:SetScript("OnClick", function(btn)
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 		local parent = btn:GetParent()
-		for i = 1, C_AddOns.GetNumAddOns() do
-			parent:enableAddon(parent.nameByIndex[i], true)
-		end
+		parent:setAddonsEnabled(true)
 		parent:updateList()
 		parent:updateReloadButton()
 	end)
@@ -431,9 +430,7 @@ listFrame:SetScript("OnShow", function(self)
 	self.disableAll:SetScript("OnClick", function(btn)
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
 		local parent = btn:GetParent()
-		for i = 1, C_AddOns.GetNumAddOns() do
-			parent:enableAddon(parent.nameByIndex[i], false)
-		end
+		parent:setAddonsEnabled(false)
 		parent:updateList()
 		parent:updateReloadButton()
 	end)
@@ -555,15 +552,17 @@ end
 
 
 function listFrame:sort(force)
+	local cpuSortBy = self.config.cpuSortBy
+	local sortByTitle = self.config.sortBy == "title"
 	local metric, copy
-	if self.config.cpuSortBy then
-		if self.config.cpuSortBy == "current" then
+	if cpuSortBy ~= nil then
+		if cpuSortBy == "current" then
 			metric = self.enumRecentAverageTime
-		elseif self.config.cpuSortBy == "average" then
+		elseif cpuSortBy == "average" then
 			metric = self.enumSessionAverageTime
-		elseif self.config.cpuSortBy == "peak" then
+		elseif cpuSortBy == "peak" then
 			metric = self.enumPeakTime
-		elseif self.config.cpuSortBy == "encounter" then
+		elseif cpuSortBy == "encounter" then
 			metric = self.enumEncounterAverageTime
 		end
 		if not force then
@@ -577,7 +576,7 @@ function listFrame:sort(force)
 		local nameA = self.nameByIndex[a]
 		local nameB = self.nameByIndex[b]
 
-		if self.config.cpuSortBy then
+		if cpuSortBy ~= nil then
 			local loadedA = C_AddOns.IsAddOnLoaded(a)
 			local loadedB = C_AddOns.IsAddOnLoaded(b)
 
@@ -592,7 +591,7 @@ function listFrame:sort(force)
 			elseif loadedB then return false end
 		end
 
-		if self.config.sortBy == "title" then
+		if sortByTitle then
 			local titleA = self.titleByIndex[a]
 			local titleB = self.titleByIndex[b]
 			if titleA < titleB then return true
@@ -608,7 +607,7 @@ function listFrame:sort(force)
 		return a < b
 	end)
 
-	if self.config.cpuSortBy and not force then
+	if cpuSortBy and not force then
 		for i = 1, #self.sorted do
 			if self.sorted[i] ~= copy[i] then
 				self:updateFilters()
@@ -677,8 +676,9 @@ function listFrame:setChildByDeps()
 				if next(pList) then
 					self.hasParentByIndex[index] = true
 					for pIndex in next, pList do
-						self.childByPIndex[pIndex] = self.childByPIndex[pIndex] or {}
-						tInsertUnique(self.childByPIndex[pIndex], index)
+						local childs = self.childByPIndex[pIndex]
+						if childs then tInsertUnique(childs, index)
+						else self.childByPIndex[pIndex] = {index} end
 					end
 				end
 			end
@@ -688,21 +688,23 @@ end
 
 
 function listFrame:setChildByTreeDeps()
-	local function checkDeps(dIndex, pIndex, list)
-		if self.circular[pIndex] then return false end
-		for i = 1, #list do
-			local index = self.indexByName[list[i]]
-			if index then
-				local deps = {C_AddOns.GetAddOnDependencies(list[i])}
-				for j = 1, #deps do
-					local depIndex = self.indexByName[deps[j]]
-					if depIndex and (dIndex == depIndex or not checkDeps(dIndex, index, deps)) then
-						return false
-					end
-				end
+	local cache = {}
+	local function checkDeps(dIndex, pIndex)
+		if self.circular[pIndex] then return true end
+		local cacheKey = dIndex.."|"..pIndex
+		if cache[cacheKey] ~= nil then
+			return cache[cacheKey]
+		end
+		local deps = {C_AddOns.GetAddOnDependencies(pIndex)}
+		for i = 1, #deps do
+			local index = self.indexByName[deps[i]]
+			if index and (dIndex == index or checkDeps(dIndex, index)) then
+				cache[cacheKey] = true
+				return true
 			end
 		end
-		return true
+		cache[cacheKey] = false
+		return false
 	end
 
 	for i = 1, #self.filtred do
@@ -710,10 +712,23 @@ function listFrame:setChildByTreeDeps()
 		local deps = {C_AddOns.GetAddOnDependencies(index)}
 		for j = 1, #deps do
 			local depIndex = self.indexByName[deps[j]]
-			if depIndex and checkDeps(depIndex, index, deps) then
-				self.hasParentByIndex[index] = true
-				self.childByPIndex[depIndex] = self.childByPIndex[depIndex] or {}
-				tinsert(self.childByPIndex[depIndex], index)
+			if depIndex then
+				local addChild = true
+				for n = 1, #deps do
+					if n ~= j then
+						local pIndex = self.indexByName[deps[n]]
+						if pIndex and checkDeps(depIndex, pIndex) then
+							addChild = false
+							break
+						end
+					end
+				end
+				if addChild then
+					self.hasParentByIndex[index] = true
+					local childs = self.childByPIndex[depIndex]
+					if childs then childs[#childs + 1] = index
+					else self.childByPIndex[depIndex] = {index} end
+				end
 			end
 		end
 	end
@@ -723,27 +738,35 @@ end
 function listFrame:setChildByGroup()
 	for i = 1, #self.filtred do
 		local index = self.filtred[i]
-		local name = C_AddOns.GetAddOnInfo(index)
+		local name = self.nameByIndex[index]
 		local group = C_AddOns.GetAddOnMetadata(index, "Group")
 
 		if group and name ~= group then
 			local pIndex = self.indexByName[group]
 			if pIndex then
 				self.hasParentByIndex[index] = true
-				self.childByPIndex[pIndex] = self.childByPIndex[pIndex] or {}
-				tinsert(self.childByPIndex[pIndex], index)
+				local childs = self.childByPIndex[pIndex]
+				if childs then childs[#childs + 1] = index
+				else self.childByPIndex[pIndex] = {index} end
 			end
 		end
 	end
 end
 
 
-function listFrame:enableAddon(name, enabled)
-	if self.locked[name] then return end
+function listFrame:setAddonsEnabled(enabled, char)
+	for i = 1, C_AddOns.GetNumAddOns() do
+		self:enableAddon(self.nameByIndex[i], enabled, char)
+	end
+end
+
+
+function listFrame:enableAddon(name, enabled, char)
+	if self.locked[name] and not char then return end
 	if enabled then
-		C_AddOns.EnableAddOn(name, self.addonCharacter)
+		C_AddOns.EnableAddOn(name, char or self.addonCharacter)
 	else
-		C_AddOns.DisableAddOn(name, self.addonCharacter)
+		C_AddOns.DisableAddOn(name, char or self.addonCharacter)
 	end
 end
 
@@ -854,6 +877,9 @@ do
 			GameTooltip:AddLine(self:getAddonDepsString(name), nil, nil, nil, true)
 			addLineNotEmpty(CATEGORIES, C_AddOns.GetAddOnMetadata(name, "Category"))
 			addLineNotEmpty(L["Profiles with addon"], self:getProfilesWithAddon(name))
+			--@do-not-package@
+			addLineNotEmpty("Index", self.tooltipIndex)
+			--@end-do-not-package@
 
 			if notes then
 				GameTooltip:AddLine(" ")

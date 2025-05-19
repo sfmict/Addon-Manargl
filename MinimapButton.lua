@@ -36,12 +36,12 @@ end)
 
 
 local function addOddLine(tooltip, text1, text2)
-	tooltip:AddDoubleLine(text1, text2, .8,1,1,.8,1,1)
+	tooltip:AddDoubleLine(text1, text2, 1,1,1,1,1,1)
 end
 
 
 local function addEvenLine(tooltip, text1, text2)
-	tooltip:AddDoubleLine(text1, text2, 1,1,1,1,1,1)
+	tooltip:AddDoubleLine(text1, text2, .8,1,1,.8,1,1)
 end
 
 
@@ -55,6 +55,9 @@ C_Timer.After(0, function()
 				if #listFrame.profiles == 0 then return end
 				menu:ddSetNoGlobalMouseEvent(true, self)
 				menu:ddToggle(1, nil, self, "TOPRIGHT", "BOTTOMRIGHT")
+			elseif button == "MiddleButton" then
+				collectgarbage()
+				self:GetScript("OnEnter")(self)
 			else
 				menu:ddCloseMenus()
 				addonToggle()
@@ -89,8 +92,10 @@ C_Timer.After(0, function()
 
 			tooltip:AddLine(" ")
 
-			local text = TOTAL_MEM_MB_ABBR:gsub("%%.+", ""):trim()
-			tooltip:AddDoubleLine(text, listFrame:formatMemory(totalMem), 1,1,1,1,1,1)
+			addOddLine(tooltip, L["UI Memory:"], listFrame:formatMemory(collectgarbage("count")))
+			addEvenLine(tooltip, TOTAL_MEM_MB_ABBR:gsub("%%.+", ""):trim(), listFrame:formatMemory(totalMem))
+
+			tooltip:AddLine(" ")
 
 			for i = 1, #topAddons do
 				local name = C_AddOns.GetAddOnInfo(topAddons[i].index)
@@ -105,6 +110,7 @@ C_Timer.After(0, function()
 			if #listFrame.profiles ~= 0 then
 				tooltip:AddLine(listFrame.RIGHT_MOUSE_ICON..L["Right click to open the Profile Menu"])
 			end
+			tooltip:AddLine(listFrame.MIDDLE_MOUSE_ICON..L["Middle click to clean the memory"])
 		end,
 	})
 	local ldbi = LibStub("LibDBIcon-1.0")

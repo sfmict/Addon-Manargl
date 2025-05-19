@@ -498,8 +498,8 @@ end
 
 
 function listFrame:loadProfile(profile, reloadCheck)
-	for i = 1, C_AddOns.GetNumAddOns() do self:enableAddon(self.nameByIndex[i], false) end
-	local context = self:enableAddonsTree(profile, true)
+	self:setAddonsEnabled(false)
+	self:enableAddonsTree(profile, true)
 
 	if reloadCheck then
 		if self:hasAnyChanges() then

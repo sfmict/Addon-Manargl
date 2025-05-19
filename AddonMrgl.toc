@@ -27,4 +27,5 @@ Profiler.lua
 Profiles.lua
 Settings.lua
 MinimapButton.lua
+AddonSearch.lua
 skins\ElvUI.lua
