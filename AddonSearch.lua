@@ -10,7 +10,7 @@ listFrame:HookScript("OnShow", function(self)
 		for name, enabled in next, self.db.searchAddon.initialList do
 			self:enableAddon(name, enabled, self.charName)
 		end
-		if guiltyAddon then self:enableAddon(guiltyAddon, false, self.charName) end
+		if guiltyAddon then self:enableAddon(guiltyAddon, false, false) end
 		self.db.searchAddon = nil
 		ReloadUI()
 	end
@@ -40,9 +40,11 @@ listFrame:HookScript("OnShow", function(self)
 		end
 
 		local function notDepSuspected(name)
-			local deps = {C_AddOns.GetAddOnDependencies(name)}
-			for i = 1, #deps do
-				if tContains(suspected, deps[i]) then return false end
+			local deps = self.depsByName[name]
+			if deps ~= nil then
+				for i = 1, #deps do
+					if tContains(suspected, deps[i]) then return false end
+				end
 			end
 			return true
 		end
@@ -85,51 +87,49 @@ function listFrame:startSearch()
 	}
 	StaticPopup_Show(self.addonName.."START_SEARCH", nil, nil, function()
 		local initialList = {}
-		local indexByName = {}
 		local loadedList = {}
 		local childByPName = {}
 		local hasParentByName = {}
 
-		for i = 1, C_AddOns.GetNumAddOns() do
-			local name = self.nameByIndex[i]
-			local loadable, reason = C_AddOns.IsAddOnLoadable(i, self.charName)
-			initialList[name] = reason ~= "DISABLED"
-			if name ~= addon and (loadable or reason == "DEMAND_LOADED" or reason == "DEP_DEMAND_LOADED") then
-				indexByName[name] = i
-				loadedList[#loadedList + 1] = name
-			end
-		end
-
 		local function checkDeps(dName, pName)
-			if pName == addon or self.circular[indexByName[pName]] then return true end
-			local loadable, reason = C_AddOns.IsAddOnLoadable(pName, self.charName)
-			if not loadable and reason ~= "DEMAND_LOADED" and reason ~= "DEP_DEMAND_LOADED" then return true end
-			local deps = {C_AddOns.GetAddOnDependencies(pName)}
-			for j = 1, #deps do
-				local name = deps[j]
-				if dName == name or checkDeps(dName, name) then
-					return true
+			if pName == addon or self.circular[pName] then return true end
+			local deps = self.depsByName[pName]
+			if deps ~= nil then
+				for i, name in ipairs(deps) do
+					if dName == name or checkDeps(dName, name) then
+						return true
+					end
 				end
 			end
 			return false
 		end
 
-		for i, name in ipairs(loadedList) do
-			local deps = {C_AddOns.GetAddOnDependencies(name)}
-			for j = 1, #deps do
-				local depName = deps[j]
-				local addChild = true
-				for n = 1, #deps do
-					if n ~= j and checkDeps(depName, deps[n]) then
-						addChild = false
-						break
+		for i = 1, #self.sorted do
+			local name = self.sorted[i]
+			local loadable, reason = C_AddOns.IsAddOnLoadable(name, self.charName)
+			initialList[name] = reason ~= "DISABLED"
+			if name ~= addon and (loadable or reason == "DEMAND_LOADED" or reason == "DEP_DEMAND_LOADED") then
+				loadedList[#loadedList + 1] = name
+				local deps = self.depsByName[name]
+				if deps ~= nil then
+					for j = 1, #deps do
+						local dName = deps[j]
+						if dName ~= addon then
+							local addChild = true
+							for n = 1, #deps do
+								if n ~= j and checkDeps(dName, deps[n]) then
+									addChild = false
+									break
+								end
+							end
+							if addChild then
+								hasParentByName[name] = true
+								local childs = childByPName[dName]
+								if childs then childs[#childs + 1] = name
+								else childByPName[dName] = {name} end
+							end
+						end
 					end
-				end
-				if addChild then
-					hasParentByName[name] = true
-					local childs = childByPName[depName]
-					if childs then childs[#childs + 1] = name
-					else childByPName[depName] = {name} end
 				end
 			end
 		end

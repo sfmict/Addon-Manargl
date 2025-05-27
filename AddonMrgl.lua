@@ -1,7 +1,7 @@
 local addon, ns = ...
 local L = ns.L
 local listFrame = AddonMgrAddonList
-local C_AddOns = C_AddOns
+local wipe, next, ipairs, strcmputf8i, C_AddOns = wipe, next, ipairs, strcmputf8i, C_AddOns
 
 listFrame.isMainline = WOW_PROJECT_MAINLINE == WOW_PROJECT_ID
 listFrame.LEFT_MOUSE_ICON = C_Texture.GetAtlasInfo("newplayertutorial-icon-mouse-leftbutton") and "|A:newplayertutorial-icon-mouse-leftbutton:0:0|a " or ""
@@ -50,23 +50,23 @@ function listFrame:ADDON_LOADED(addonName)
 	self.locked = self.db.locked
 
 	self.charName = UnitName("player")
-	self.indexByName = {}
-	self.nameByIndex = {}
+	self.sorted = {}
+	local indexByName = {}
 
 	for i = 1, C_AddOns.GetNumAddOns() do
 		local name = C_AddOns.GetAddOnInfo(i)
-		self.indexByName[name] = i
-		self.nameByIndex[i] = name
+		self.sorted[i] = name
+		indexByName[name] = i
 	end
 
 	for name in next, self.depCollapsed do
-		if not self.indexByName[name] then
+		if indexByName[name] == nil then
 			self.depCollapsed[name] = nil
 		end
 	end
 
 	function self:ADDON_LOADED(addonName)
-		if self.dataProvider and self.indexByName[addonName] and self:IsShown() then
+		if self.dataProvider and self.filtred[addonName] and self:IsShown() then
 			UpdateAddOnMemoryUsage()
 			self:sort()
 		end
@@ -103,7 +103,6 @@ end
 
 listFrame:SetScript("OnShow", function(self)
 	self:SetScript("OnShow", self.onShow)
-	self:SetFrameLevel(2000)
 	self:RegisterForDrag("LeftButton")
 	self:SetTitle(C_AddOns.GetAddOnMetadata(addon, "Title"))
 	tinsert(UISpecialFrames, self:GetName())
@@ -196,38 +195,42 @@ listFrame:SetScript("OnShow", function(self)
 		parent.config.width, parent.config.height = parent:GetSize()
 	end)
 
-	-- CIRCULAR & CATEGORIES
-	local context = {}
-	self.circular = {}
-	self.sorted = {}
-	self.titleByIndex = {}
-	self.catigoriesList = {}
+	-- CATEGORIES & DEPENDENCIES
+	self.titleByName = {}
 	self.categoriesFilter = {}
-	local function checkCirc(i)
-		if context[i] then self.circular[i] = true return end
-		context[i] = true
-		local deps = {C_AddOns.GetAddOnDependencies(i)}
-		for i = 1, #deps do
-			local di = self.indexByName[deps[i]]
-			if di ~= nil then checkCirc(di) end
-		end
-		context[i] = nil
-	end
+	self.depsByName = {}
 	for i = 1, C_AddOns.GetNumAddOns() do
 		local name, title = C_AddOns.GetAddOnInfo(i)
-		self.sorted[i] = i
-		self.titleByIndex[i] = title:gsub("|[Cc]%x%x%x%x%x%x%x%x", ""):gsub("|[Rr]", ""):gsub("|T.-|t", ""):gsub("|A.-|a", ""):trim():lower()
-		checkCirc(i)
+		self.titleByName[name] = title:gsub("|[Cc]%x%x%x%x%x%x%x%x", ""):gsub("|[Rr]", ""):gsub("|T.-|t", ""):gsub("|A.-|a", ""):trim():lower()
 		local category = C_AddOns.GetAddOnMetadata(i, "Category")
 		if category then
 			if not self.categoriesFilter[category] then
 				self.categoriesFilter[category] = true
-				self.catigoriesList[#self.catigoriesList + 1] = category
+				self.categoriesFilter[#self.categoriesFilter + 1] = category
 			end
 		end
+		local deps = {C_AddOns.GetAddOnDependencies(i)}
+		if deps[1] then self.depsByName[name] = deps end
 	end
-	sort(self.catigoriesList)
+	sort(self.categoriesFilter)
+	self.categoriesFilter[#self.categoriesFilter + 1] = "rest"
 	self.categoriesFilter["rest"] = true
+
+	-- CIRCULAR
+	local context = {}
+	self.circular = {}
+	local function checkCirc(name)
+		if context[name] then self.circular[name] = true return end
+		context[name] = true
+		local deps = self.depsByName[name]
+		if deps ~= nil then
+			for i = 1, #deps do
+				checkCirc(deps[i])
+			end
+		end
+		context[name] = nil
+	end
+	for name in next, self.depsByName do checkCirc(name) end
 
 	-- CHARACTER
 	self.charSelect = self.isMainline and lsfdd:CreateModernButton(self) or lsfdd:CreateButton(self)
@@ -311,9 +314,7 @@ listFrame:SetScript("OnShow", function(self)
 
 			info.text = CHECK_ALL
 			info.func = function()
-				for k in next, self.categoriesFilter do
-					self.categoriesFilter[k] = true
-				end
+				self:setAllCategoryfilters(true)
 				self:updateFilters()
 				dd:ddRefresh(level)
 			end
@@ -321,9 +322,7 @@ listFrame:SetScript("OnShow", function(self)
 
 			info.text = UNCHECK_ALL
 			info.func = function()
-				for k in next, self.categoriesFilter do
-					self.categoriesFilter[k] = false
-				end
+				self:setAllCategoryfilters(false)
 				self:updateFilters()
 				dd:ddRefresh(level)
 			end
@@ -338,15 +337,12 @@ listFrame:SetScript("OnShow", function(self)
 			end
 			info.checked = function(btn) return self.categoriesFilter[btn.value] end
 
-			for i = 1, #self.catigoriesList do
-				info.text = self.catigoriesList[i]
-				info.value = info.text
+			for i = 1, #self.categoriesFilter do
+				local text = self.categoriesFilter[i]
+				info.text =	text == "rest" and L["Rest"] or text
+				info.value = text
 				dd:ddAddButton(info, level)
 			end
-
-			info.text = L["Rest"]
-			info.value = "rest"
-			dd:ddAddButton(info, level)
 		end
 	end)
 
@@ -458,8 +454,8 @@ listFrame:SetScript("OnShow", function(self)
 	end)
 
 	-- TABLES
-	self.hasParentByIndex = {}
-	self.childByPIndex = {}
+	self.hasParentByName = {}
+	self.childByPName = {}
 	self.filtred = {}
 
 	-- INIT
@@ -514,7 +510,7 @@ function listFrame:showResetBtn()
 			return
 		end
 	end
-	for k in next, self.categoriesFilter do
+	for _, k in ipairs(self.categoriesFilter) do
 		if not self.categoriesFilter[k] then
 			self.resetBtn:Show()
 			return
@@ -524,13 +520,18 @@ function listFrame:showResetBtn()
 end
 
 
+function listFrame:setAllCategoryfilters(enabled)
+	for _, k in ipairs(self.categoriesFilter) do
+		self.categoriesFilter[k] = enabled
+	end
+end
+
+
 function listFrame:resetFilters()
 	for k in next, self.filters do
 		self.filters[k] = true
 	end
-	for k in next, self.categoriesFilter do
-		self.categoriesFilter[k] = true
-	end
+	self:setAllCategoryfilters(true)
 	self:updateFilters()
 end
 
@@ -571,14 +572,12 @@ function listFrame:sort(force)
 		end
 	end
 
-	sort(self.sorted, function(a, b)
-		if a == b then return false end
-		local nameA = self.nameByIndex[a]
-		local nameB = self.nameByIndex[b]
+	sort(self.sorted, function(nameA, nameB)
+		if nameA == nameB then return false end
 
 		if cpuSortBy ~= nil then
-			local loadedA = C_AddOns.IsAddOnLoaded(a)
-			local loadedB = C_AddOns.IsAddOnLoaded(b)
+			local loadedA = C_AddOns.IsAddOnLoaded(nameA)
+			local loadedB = C_AddOns.IsAddOnLoaded(nameB)
 
 			if loadedA and loadedB then
 				local ma = self:getAddonMetric(nameA, metric)
@@ -592,19 +591,15 @@ function listFrame:sort(force)
 		end
 
 		if sortByTitle then
-			local titleA = self.titleByIndex[a]
-			local titleB = self.titleByIndex[b]
-			if titleA < titleB then return true
-			elseif titleA > titleB then return false end
+			local val = strcmputf8i(self.titleByName[nameA], self.titleByName[nameB])
+			if val < 0 then return true
+			elseif val > 0 then return false end
 		end
 
 		nameA = nameA:lower()
 		nameB = nameB:lower()
 
-		if nameA < nameB then return true
-		elseif nameA > nameB then return false end
-
-		return a < b
+		return strcmputf8i(nameA, nameB) < 0
 	end)
 
 	if cpuSortBy and not force then
@@ -623,19 +618,19 @@ function listFrame:sort(force)
 end
 
 
-function listFrame:setCollapsed(index, collapsed)
-	self.depCollapsed[self.nameByIndex[index]] = collapsed or nil
+function listFrame:setCollapsed(name, collapsed)
+	self.depCollapsed[name] = collapsed or nil
 end
 
 
-function listFrame:isCollapsed(index)
-	return self.depCollapsed[self.nameByIndex[index]] and self.notSearched
+function listFrame:isCollapsed(name)
+	return self.depCollapsed[name] and self.notSearched
 end
 
 
 function listFrame:setListGroup()
-	wipe(self.hasParentByIndex)
-	wipe(self.childByPIndex)
+	wipe(self.hasParentByName)
+	wipe(self.childByPName)
 
 	if not self.config.cpuSortBy and self.config.listGroup ~= "none" then
 		if self.config.listGroup == "dep" then
@@ -651,34 +646,38 @@ function listFrame:setListGroup()
 end
 
 
-function listFrame:setChildByDeps()
-	local function addMaxParents(index, pList)
-		if self.circular[index] then return end
-		local deps = {C_AddOns.GetAddOnDependencies(index)}
-		if #deps > 0 then
+do
+	local function addMaxParents(self, name, pList)
+		if self.circular[name] then return end
+		local deps = self.depsByName[name]
+		if deps ~= nil then
 			for i = 1, #deps do
-				local depIndex = self.indexByName[deps[i]]
-				if depIndex then addMaxParents(depIndex, pList) end
+				local dName = deps[i]
+				if self.filtred[dName] then addMaxParents(self, dName, pList) end
 			end
 		else
-			pList[index] = true
+			pList[name] = true
 		end
 	end
 
-	for i = 1, #self.filtred do
-		local index = self.filtred[i]
-		local deps = {C_AddOns.GetAddOnDependencies(index)}
-		for j = 1, #deps do
-			local depIndex = self.indexByName[deps[j]]
-			if depIndex then
-				local pList = {}
-				addMaxParents(depIndex, pList)
-				if next(pList) then
-					self.hasParentByIndex[index] = true
-					for pIndex in next, pList do
-						local childs = self.childByPIndex[pIndex]
-						if childs then tInsertUnique(childs, index)
-						else self.childByPIndex[pIndex] = {index} end
+	function listFrame:setChildByDeps()
+		for i = 1, #self.filtred do
+			local name = self.filtred[i]
+			local deps = self.depsByName[name]
+			if deps ~= nil then
+				for j = 1, #deps do
+					local dName = deps[j]
+					if self.filtred[dName] then
+						local pList = {}
+						addMaxParents(self, dName, pList)
+						if next(pList) then
+							self.hasParentByName[name] = true
+							for pName in next, pList do
+								local childs = self.childByPName[pName]
+								if childs then tInsertUnique(childs, name)
+								else self.childByPName[pName] = {name} end
+							end
+						end
 					end
 				end
 			end
@@ -687,67 +686,72 @@ function listFrame:setChildByDeps()
 end
 
 
-function listFrame:setChildByTreeDeps()
+do
 	local cache = {}
-	local function checkDeps(dIndex, pIndex)
-		if self.circular[pIndex] then return true end
-		local cacheKey = dIndex.."|"..pIndex
+	local function checkDeps(self, dName, name)
+		if self.circular[name] then return true end
+		local cacheKey = dName.."|"..name
 		if cache[cacheKey] ~= nil then
 			return cache[cacheKey]
 		end
-		local deps = {C_AddOns.GetAddOnDependencies(pIndex)}
-		for i = 1, #deps do
-			local index = self.indexByName[deps[i]]
-			if index and (dIndex == index or checkDeps(dIndex, index)) then
-				cache[cacheKey] = true
-				return true
+		local deps = self.depsByName[name]
+		if deps ~= nil then
+			for i = 1, #deps do
+				local pName = deps[i]
+				if self.filtred[pName] and (dName == pName or checkDeps(self, dName, pName)) then
+					cache[cacheKey] = true
+					return true
+				end
 			end
 		end
 		cache[cacheKey] = false
 		return false
 	end
 
-	for i = 1, #self.filtred do
-		local index = self.filtred[i]
-		local deps = {C_AddOns.GetAddOnDependencies(index)}
-		for j = 1, #deps do
-			local depIndex = self.indexByName[deps[j]]
-			if depIndex then
-				local addChild = true
-				for n = 1, #deps do
-					if n ~= j then
-						local pIndex = self.indexByName[deps[n]]
-						if pIndex and checkDeps(depIndex, pIndex) then
-							addChild = false
-							break
+	function listFrame:setChildByTreeDeps()
+		for i = 1, #self.filtred do
+			local name = self.filtred[i]
+			local deps = self.depsByName[name]
+			if deps ~= nil then
+				for j = 1, #deps do
+					local dName = deps[j]
+					if self.filtred[dName] then
+						local addChild = true
+						for n = 1, #deps do
+							if n ~= j then
+								local pName = deps[n]
+								if self.filtred[pName] and checkDeps(self, dName, pName) then
+									addChild = false
+									break
+								end
+							end
+						end
+						if addChild then
+							self.hasParentByName[name] = true
+							local childs = self.childByPName[dName]
+							if childs then childs[#childs + 1] = name
+							else self.childByPName[dName] = {name} end
 						end
 					end
 				end
-				if addChild then
-					self.hasParentByIndex[index] = true
-					local childs = self.childByPIndex[depIndex]
-					if childs then childs[#childs + 1] = index
-					else self.childByPIndex[depIndex] = {index} end
-				end
 			end
 		end
+		wipe(cache)
 	end
 end
 
 
 function listFrame:setChildByGroup()
 	for i = 1, #self.filtred do
-		local index = self.filtred[i]
-		local name = self.nameByIndex[index]
-		local group = C_AddOns.GetAddOnMetadata(index, "Group")
+		local name = self.filtred[i]
+		local gName = C_AddOns.GetAddOnMetadata(name, "Group")
 
-		if group and name ~= group then
-			local pIndex = self.indexByName[group]
-			if pIndex then
-				self.hasParentByIndex[index] = true
-				local childs = self.childByPIndex[pIndex]
-				if childs then childs[#childs + 1] = index
-				else self.childByPIndex[pIndex] = {index} end
+		if gName and name ~= gName then
+			if self.filtred[gName] then
+				self.hasParentByName[name] = true
+				local childs = self.childByPName[gName]
+				if childs then childs[#childs + 1] = name
+				else self.childByPName[gName] = {name} end
 			end
 		end
 	end
@@ -755,18 +759,19 @@ end
 
 
 function listFrame:setAddonsEnabled(enabled, char)
-	for i = 1, C_AddOns.GetNumAddOns() do
-		self:enableAddon(self.nameByIndex[i], enabled, char)
+	for i = 1, #self.sorted do
+		self:enableAddon(self.sorted[i], enabled, char)
 	end
 end
 
 
 function listFrame:enableAddon(name, enabled, char)
-	if self.locked[name] and not char then return end
+	if self.locked[name] and char == nil then return end
+	if char == nil then char = self.addonCharacter end
 	if enabled then
-		C_AddOns.EnableAddOn(name, char or self.addonCharacter)
+		C_AddOns.EnableAddOn(name, char or nil)
 	else
-		C_AddOns.DisableAddOn(name, char or self.addonCharacter)
+		C_AddOns.DisableAddOn(name, char or nil)
 	end
 end
 
@@ -775,20 +780,22 @@ function listFrame:enableAddonDependencies(name, enabled, context)
 	context = context or {}
 	if context[name] then return end
 	context[name] = true
-	for _, aName in ipairs({C_AddOns.GetAddOnDependencies(name)}) do
-		if self.indexByName[aName] then
-			self:enableAddon(aName, enabled)
-			self:enableAddonDependencies(aName, enabled, context)
+	local deps = self.depsByName[name]
+	if deps == nil then return end
+	for _, dName in ipairs(deps) do
+		local _,_,_,_,_, security = C_AddOns.GetAddOnInfo(dName)
+		if security == "INSECURE" then
+			self:enableAddon(dName, enabled)
+			self:enableAddonDependencies(dName, enabled, context)
 		end
 	end
 end
 
 
 function listFrame:enableAddonChildren(name, enabled)
-	local childs = self.childByPIndex[self.indexByName[name]]
+	local childs = self.childByPName[name]
 	if not childs then return end
-	for _, index in ipairs(childs) do
-		local aName = self.nameByIndex[index]
+	for _, aName in ipairs(childs) do
 		self:enableAddon(aName, enabled)
 		self:enableAddonChildren(aName, enabled)
 	end
@@ -840,8 +847,8 @@ do
 	end
 
 	function listFrame:updateTooltip()
-		if not self.tooltipIndex then return end
-		local name, title, notes, _, reason, security = C_AddOns.GetAddOnInfo(self.tooltipIndex)
+		if not self.tooltipName then return end
+		local name, title, notes, _, reason, security = C_AddOns.GetAddOnInfo(self.tooltipName)
 
 		GameTooltip:ClearLines()
 		if security == BANNED then
@@ -877,9 +884,6 @@ do
 			GameTooltip:AddLine(self:getAddonDepsString(name), nil, nil, nil, true)
 			addLineNotEmpty(CATEGORIES, C_AddOns.GetAddOnMetadata(name, "Category"))
 			addLineNotEmpty(L["Profiles with addon"], self:getProfilesWithAddon(name))
-			--@do-not-package@
-			addLineNotEmpty("Index", self.tooltipIndex)
-			--@end-do-not-package@
 
 			if notes then
 				GameTooltip:AddLine(" ")
@@ -887,7 +891,7 @@ do
 			end
 
 			GameTooltip:AddLine(" ");
-			if self.childByPIndex[self.tooltipIndex] then
+			if self.childByPName[self.tooltipName] then
 				GameTooltip:AddLine(self.LEFT_MOUSE_ICON..L["Left+Shift with children"])
 			end
 			GameTooltip:AddLine(self.LEFT_MOUSE_ICON..L["Left+Alt to lock/unclock"])
@@ -921,23 +925,25 @@ function listFrame:updateReloadButton()
 end
 
 
-function listFrame:isAddonLoadOnDemand(index)
-	local deps = {C_AddOns.GetAddOnDependencies(index)}
-	for i = 1, #deps do
-		if not C_AddOns.IsAddOnLoaded(deps[i]) then return false end
+function listFrame:isAddonLoadOnDemand(name)
+	local deps = self.depsByName[name]
+	if deps ~= nil then
+		for i = 1, #deps do
+			if not C_AddOns.IsAddOnLoaded(deps[i]) then return false end
+		end
 	end
 	return true
 end
 
 
 function listFrame:normalInit(f, node)
-	local index = node:GetData().index
-	local name, title = C_AddOns.GetAddOnInfo(index)
+	local name = node:GetData().name
+	local _, title = C_AddOns.GetAddOnInfo(name)
 	f.name = name
 
 	if self.config.showIcon then
-		local iconTexture = C_AddOns.GetAddOnMetadata(index, "IconTexture")
-		local iconAtlas = C_AddOns.GetAddOnMetadata(index, "IconAtlas")
+		local iconTexture = C_AddOns.GetAddOnMetadata(name, "IconTexture")
+		local iconAtlas = C_AddOns.GetAddOnMetadata(name, "IconAtlas")
 
 		if self.config.showNoIcon and not (iconTexture or iconAtlas) then
 			iconTexture = [[Interface\ICONS\INV_Misc_QuestionMark]]
@@ -955,11 +961,11 @@ function listFrame:normalInit(f, node)
 	end
 	f.select:SetShown(self.selProfileAddons and self.selProfileAddons[name])
 
-	local loadable, reason = C_AddOns.IsAddOnLoadable(index, self.charName)
-	local checkboxState = C_AddOns.GetAddOnEnableState(index, self.addonCharacter)
+	local loadable, reason = C_AddOns.IsAddOnLoadable(name, self.charName)
+	local checkboxState = C_AddOns.GetAddOnEnableState(name, self.addonCharacter)
 	local enabled = checkboxState > Enum.AddOnEnableState.None
 	local charEnabled = reason ~= "DISABLED"
-	local loaded = C_AddOns.IsAddOnLoaded(index)
+	local loaded = C_AddOns.IsAddOnLoaded(name)
 	f.loaded = loaded
 
 	local titleText = self.config.showNameInsteadOfTitle and name or title
@@ -974,7 +980,7 @@ function listFrame:normalInit(f, node)
 	end
 
 	if self.config.showVersion then
-		local version = C_AddOns.GetAddOnMetadata(index, "Version")
+		local version = C_AddOns.GetAddOnMetadata(name, "Version")
 		if version then
 			titleText = ("%s |Cff606060(%s)|r"):format(titleText, version)
 		end
@@ -1013,7 +1019,7 @@ function listFrame:normalInit(f, node)
 	end
 
 	if not loaded and reason == "DEMAND_LOADED" then
-		if self:isAddonLoadOnDemand(index) then
+		if self:isAddonLoadOnDemand(name) then
 			f.loadButton:Show()
 			f.status:Hide()
 		else
@@ -1053,11 +1059,11 @@ end
 do
 	local function addChilds(self, pNode, pList)
 		for i = 1, #pList do
-			local index = pList[i]
-			local list = self.childByPIndex[index]
-			local node = pNode:Insert({index = index, isParent = list and true})
+			local name = pList[i]
+			local list = self.childByPName[name]
+			local node = pNode:Insert({name = name, isParent = list and true})
 			if list then
-				node:SetCollapsed(self:isCollapsed(index))
+				node:SetCollapsed(self:isCollapsed(name))
 				addChilds(self, node, list)
 			end
 		end
@@ -1067,12 +1073,12 @@ do
 		self.dataProvider = CreateTreeDataProvider()
 
 		for i = 1, #self.filtred do
-			local index = self.filtred[i]
-			if not self.hasParentByIndex[index] then
-				local list = self.childByPIndex[index]
-				local node = self.dataProvider:Insert({index = index, isParent = list and true})
+			local name = self.filtred[i]
+			if not self.hasParentByName[name] then
+				local list = self.childByPName[name]
+				local node = self.dataProvider:Insert({name = name, isParent = list and true})
 				if list then
-					node:SetCollapsed(self:isCollapsed(index))
+					node:SetCollapsed(self:isCollapsed(name))
 					addChilds(self, node, list)
 				end
 			end
@@ -1088,27 +1094,25 @@ function listFrame:updateFilters()
 	local searchBy = self.config.searchBy
 	local notSearched = #text == 0
 	self.notSearched = notSearched
-	wipe(self.indexByName)
 	wipe(self.filtred)
 
 	for i = 1, #self.sorted do
-		local index = self.sorted[i]
-		local name = self.nameByIndex[index]
-		local author = searchBy.author and C_AddOns.GetAddOnMetadata(index, "Author")
-		local category = C_AddOns.GetAddOnMetadata(index, "Category")
-		local loadable, reason = C_AddOns.IsAddOnLoadable(index, self.addonCharacter)
+		local name = self.sorted[i]
+		local author = searchBy.author and C_AddOns.GetAddOnMetadata(name, "Author")
+		local category = C_AddOns.GetAddOnMetadata(name, "Category")
+		local loadable, reason = C_AddOns.IsAddOnLoadable(name, self.addonCharacter)
 		local enabled = loadable or reason == "DEMAND_LOADED"
 
 		if (enabled and self.filters.enabled or not enabled and self.filters.disabled)
 		and self.categoriesFilter[category or "rest"]
 		and (notSearched
 			or searchBy.name and name:lower():find(text, 1, true)
-			or searchBy.title and self.titleByIndex[index]:find(text, 1, true)
+			or searchBy.title and self.titleByName[name]:find(text, 1, true)
 			or author and author:lower():find(text, 1, true)
 			or searchBy.category and category and category:lower():find(text, 1, true))
 		then
-			self.indexByName[name] = index
-			self.filtred[#self.filtred + 1] = index
+			self.filtred[name] = true
+			self.filtred[#self.filtred + 1] = name
 		end
 	end
 

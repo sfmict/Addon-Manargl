@@ -19,7 +19,7 @@
 		<HighlightTexture parentKey="highlight" atlas="voicechat-channellist-row-highlight" alphaMode="ADD" setAllPoints="true"/>
 	</Button>
 
-	<Frame name="AddonMgrAddonList" dontSavePosition="true" movable="true" resizable="true" enableMouse="true" clampedToScreen="true" inherits="DefaultPanelTemplate" parent="UIParent" frameStrata="HIGH" hidden="true">
+	<Frame name="AddonMgrAddonList" dontSavePosition="true" movable="true" resizable="true" enableMouse="true" clampedToScreen="true" toplevel="true" inherits="DefaultPanelTemplate" parent="UIParent" frameStrata="HIGH" hidden="true">
 		<Size x="650"/>
 		<Anchors>
 			<Anchor point="CENTER" x="0" y="24"/>

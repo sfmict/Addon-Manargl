@@ -8,17 +8,16 @@ listFrame:HookScript("OnShow", function(self)
 	self.contextMenu:ddHideWhenButtonHidden(self.scrollBox)
 	self.contextMenu:ddSetDisplayMode("menu")
 
-	self.contextMenu:ddSetInitFunc(function(dd, level, index)
+	self.contextMenu:ddSetInitFunc(function(dd, level, name)
 		local info = {}
-		local name, title = C_AddOns.GetAddOnInfo(index)
 
 		if level == 1 then
-			local checked = C_AddOns.GetAddOnEnableState(index, self.charName) > Enum.AddOnEnableState.None
+			local checked = C_AddOns.GetAddOnEnableState(name, self.charName) > Enum.AddOnEnableState.None
 
 			info.keepShownOnClick = true
 			info.notCheckable = true
 			info.isTitle = true
-			info.text = self.config.showNameInsteadOfTitle and name or title
+			info.text = self.config.showNameInsteadOfTitle and name or select(2, C_AddOns.GetAddOnInfo(name))
 			dd:ddAddButton(info, level)
 
 			info.isTitle = nil
@@ -28,7 +27,7 @@ listFrame:HookScript("OnShow", function(self)
 			info.func = function(_,_,_, checked)
 				self.locked[name] = checked
 				local button = self.scrollBox:FindFrameByPredicate(function(btn, node)
-					return node:GetData().index == index
+					return node:GetData().name == name
 				end)
 				if button then self:normalInit(button, button:GetElementData()) end
 				dd:ddRefresh(level)
@@ -40,7 +39,7 @@ listFrame:HookScript("OnShow", function(self)
 			info.notCheckable = true
 			info.disabled = function() return self.locked[name] end
 
-			if self.childByPIndex[index] then
+			if self.childByPName[name] then
 				info.text = checked and L["Disable with children"] or L["Enalbe with children"]
 				info.func = function()
 					self:enableAddon(name, not checked)
@@ -51,7 +50,7 @@ listFrame:HookScript("OnShow", function(self)
 				dd:ddAddButton(info, level)
 			end
 
-			if C_AddOns.GetAddOnDependencies(index) then
+			if self.depsByName[name] then
 				info.text = checked and L["Disable with dependencies"] or L["Enable with dependencies"]
 				info.func = function()
 					self:enableAddon(name, not checked)
@@ -69,7 +68,7 @@ listFrame:HookScript("OnShow", function(self)
 				info.keepShownOnClick = true
 				info.hasArrow = true
 				info.text = L["Enabled in profile"]
-				info.value = index
+				info.value = name
 				dd:ddAddButton(info, value)
 			end
 
@@ -172,15 +171,15 @@ function AddonMgrListNormalMixin:onClick(button)
 	elseif button == "MiddleButton" then
 		self.collapseExpand:Click()
 	else
-		listFrame.contextMenu:ddToggle(1, self:GetData().index, "cursor")
+		listFrame.contextMenu:ddToggle(1, self:GetData().name, "cursor")
 	end
 end
 
 
 function AddonMgrListNormalMixin:onEnter()
-	local index = self:GetData().index
-	if listFrame.tooltipIndex == index then return end
-	listFrame.tooltipIndex = index
+	local name = self:GetData().name
+	if listFrame.tooltipName == name then return end
+	listFrame.tooltipName = name
 	GameTooltip:SetOwner(self, "ANCHOR_NONE")
 	GameTooltip:SetPoint("LEFT", self, "RIGHT")
 	listFrame:updateTooltip()
@@ -189,7 +188,7 @@ end
 
 function AddonMgrListNormalMixin:onLeave()
 	if self:IsShown() then
-		listFrame.tooltipIndex = nil
+		listFrame.tooltipName = nil
 		GameTooltip:Hide()
 	end
 end
@@ -200,7 +199,7 @@ AddonMgrListParentCategoryMixin = {}
 
 function AddonMgrListParentCategoryMixin:onClick()
 	local collapsed = self.node:ToggleCollapsed(TreeDataProviderConstants.RetainChildCollapse, TreeDataProviderConstants.DoInvalidation)
-	listFrame:setCollapsed(self.node:GetData().index, collapsed)
+	listFrame:setCollapsed(self.node:GetData().name, collapsed)
 	self:updateState()
 	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 end
