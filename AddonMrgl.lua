@@ -73,31 +73,29 @@ function listFrame:ADDON_LOADED(addonName)
 	end
 
 	-- MENU BUTTON HOOK
-	GameMenuFrame:HookScript("OnShow", function(GameMenuFrame)
-		local function overrideScript(widget)
-			local oldClick = widget:GetScript("OnClick")
-			widget:SetScript("OnClick", function(...)
-				if self.config.replaceAddonButton then
-					PlaySound(SOUNDKIT.IG_MAINMENU_OPTION)
-					HideUIPanel(GameMenuFrame)
-					self:Show()
-				else
-					oldClick(...)
-				end
-			end)
+	if GameMenuButtonAddons then
+		AddonList:HookScript("OnShow", function(AddonList)
+			if not self.config.replaceAddonButton or InCombatLockdown() then return end
+			HideUIPanel(AddonList)
+			self:Show()
+		end)
+	else
+		local function ADDONS_OnClick()
+			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION)
+			if not InCombatLockdown() then HideUIPanel(GameMenuFrame) end
+			self:Show()
 		end
 
-		if GameMenuButtonAddons then
-			overrideScript(GameMenuButtonAddons)
-		else
-			for widget in GameMenuFrame.buttonPool:EnumerateActive() do
-				if widget:GetText() == ADDONS then
-					overrideScript(widget)
+		GameMenuFrame:HookScript("OnShow", function(GameMenuFrame)
+			if not self.config.replaceAddonButton then return end
+			for btn in GameMenuFrame.buttonPool:EnumerateActive() do
+				if btn:GetText() == ADDONS then
+					btn:SetScript("OnClick", ADDONS_OnClick)
 					break
 				end
 			end
-		end
-	end)
+		end)
+	end
 end
 
 
@@ -346,7 +344,7 @@ listFrame:SetScript("OnShow", function(self)
 		end
 	end)
 
-	--FILTER RESET
+	-- FILTER RESET
 	self.resetBtn = CreateFrame("BUTTON", nil, self.filterBtn, "UIResetButtonTemplate")
 	self.resetBtn:SetPoint("CENTER", self.filterBtn, "TOPRIGHT", -3, -3)
 	self.resetBtn:SetScript("OnClick", function(btn)
@@ -396,14 +394,16 @@ listFrame:SetScript("OnShow", function(self)
 	self.view = CreateScrollBoxListTreeListView(indent, pad, pad, left, pad, spacing)
 	self.view:SetElementExtent(20)
 
+	local normalTemp = "AddonMgrListNormal"
+	local parentTemp = "AddonMgrListParent"
 	local normalInit = function(...) self:normalInit(...) end
 	local parentInit = function(...) self:parentInit(...) end
 
 	self.view:SetElementFactory(function(factory, node)
 		if node:GetData().isParent then
-			factory("AddonMgrListParent", parentInit)
+			factory(parentTemp, parentInit)
 		else
-			factory("AddonMgrListNormal", normalInit)
+			factory(normalTemp, normalInit)
 		end
 	end)
 
@@ -596,10 +596,7 @@ function listFrame:sort(force)
 			elseif val > 0 then return false end
 		end
 
-		nameA = nameA:lower()
-		nameB = nameB:lower()
-
-		return strcmputf8i(nameA, nameB) < 0
+		return strcmputf8i(nameA:lower(), nameB:lower()) < 0
 	end)
 
 	if cpuSortBy and not force then
