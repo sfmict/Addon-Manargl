@@ -1022,7 +1022,7 @@ function listFrame:normalInit(f, node)
 		else
 			f.loadButton:Hide()
 			f.status:Show()
-			f.status:SetText(_G["ADDON_"..reason])
+			f.status:SetText(ADDON_DEMAND_LOADED)
 		end
 	else
 		f.loadButton:Hide()
