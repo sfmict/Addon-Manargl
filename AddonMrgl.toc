@@ -23,6 +23,7 @@ locales.xml
 AddonMrgl.xml
 AddonMrgl.lua
 ListButtons.lua
+Filters.lua
 Profiler.lua
 Profiles.lua
 Settings.lua

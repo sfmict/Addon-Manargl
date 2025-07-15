@@ -27,6 +27,9 @@ function listFrame:ADDON_LOADED(addonName)
 	self.db.locked = self.db.locked or {}
 	self.db.omb = self.db.omb or {}
 	self.db.autoLoadProfiles = self.db.autoLoadProfiles or {}
+	self.db.tags = self.db.tags or {}
+	self.db.addonTags = self.db.addonTags or {}
+	self.db.catCollapsed = self.db.catCollapsed or {}
 
 	self.config = self.db.config
 	self.config.listGroup = self.config.listGroup or "dep"
@@ -43,11 +46,15 @@ function listFrame:ADDON_LOADED(addonName)
 	if self.config.searchBy.name == nil then self.config.searchBy.name = true end
 	if self.config.searchBy.author == nil then self.config.searchBy.author = true end
 	if self.config.searchBy.category == nil then self.config.searchBy.category = true end
+	if self.config.searchBy.tags == nil then self.config.searchBy.tags = true end
 
 	self.profiles = self.db.profiles
 	self.charProfiles = self.db.charProfiles
 	self.depCollapsed = self.db.depCollapsed
 	self.locked = self.db.locked
+	self.tags = self.db.tags
+	self.addonTags = self.db.addonTags
+	self.catCollapsed = self.db.catCollapsed
 
 	self.charName = UnitName("player")
 	self.sorted = {}
@@ -274,75 +281,10 @@ listFrame:SetScript("OnShow", function(self)
 		enabled = true,
 		disabled = true,
 	}
-
-	self.filterBtn:ddSetInitFunc(function(dd, level, value)
-		local info = {}
-		info.keepShownOnClick = true
-		info.isNotRadio = true
-
-		if level == 1 then
-			info.text = L["Enabled"]
-			info.func = function(btn, _,_, checked)
-				self.filters.enabled = checked
-				self:updateFilters()
-			end
-			info.checked = self.filters.enabled
-			dd:ddAddButton(info, level)
-
-			info.text = L["Disabled"]
-			info.func = function(btn, _,_, checked)
-				self.filters.disabled = checked
-				self:updateFilters()
-			end
-			info.checked = self.filters.disabled
-			dd:ddAddButton(info, level)
-
-			dd:ddAddSpace()
-
-			info.func = nil
-			info.checked = nil
-			info.notCheckable = true
-			info.hasArrow = true
-			info.text = CATEGORIES
-			info.value = "categories"
-			dd:ddAddButton(info, level)
-
-		elseif value == "categories" then
-			info.notCheckable = true
-
-			info.text = CHECK_ALL
-			info.func = function()
-				self:setAllCategoryfilters(true)
-				self:updateFilters()
-				dd:ddRefresh(level)
-			end
-			dd:ddAddButton(info, level)
-
-			info.text = UNCHECK_ALL
-			info.func = function()
-				self:setAllCategoryfilters(false)
-				self:updateFilters()
-				dd:ddRefresh(level)
-			end
-			dd:ddAddButton(info, level)
-
-			info.notCheckable = nil
-
-			info.func = function(btn, _,_, checked)
-				self.categoriesFilter[btn.value] = checked
-				self:updateFilters()
-				dd:ddRefresh(level)
-			end
-			info.checked = function(btn) return self.categoriesFilter[btn.value] end
-
-			for i = 1, #self.categoriesFilter do
-				local text = self.categoriesFilter[i]
-				info.text =	text == "rest" and L["Rest"] or text
-				info.value = text
-				dd:ddAddButton(info, level)
-			end
-		end
-	end)
+	self.noTagFilter = true
+	self.withAllTagsFilter = false
+	self.tagsFilter = {}
+	for i = 1, #self.tags do self.tagsFilter[self.tags[i]] = true end
 
 	-- FILTER RESET
 	self.resetBtn = CreateFrame("BUTTON", nil, self.filterBtn, "UIResetButtonTemplate")
@@ -396,14 +338,22 @@ listFrame:SetScript("OnShow", function(self)
 
 	local normalTemp = "AddonMgrListNormal"
 	local parentTemp = "AddonMgrListParent"
+	local categoryTemp = "AddonMgrListCategory"
+	local devidierTemp = "AddonMgrListDevider"
 	local normalInit = function(...) self:normalInit(...) end
 	local parentInit = function(...) self:parentInit(...) end
+	local categoryInit = function(...) self:categoryInit(...) end
 
 	self.view:SetElementFactory(function(factory, node)
-		if node:GetData().isParent then
-			factory(parentTemp, parentInit)
-		else
+		local data = node:GetData()
+		if data.isNormal then
 			factory(normalTemp, normalInit)
+		elseif data.isParent then
+			factory(parentTemp, parentInit)
+		elseif data.isCategory then
+			factory(categoryTemp, categoryInit)
+		else
+			factory(devidierTemp)
 		end
 	end)
 
@@ -503,39 +453,6 @@ function listFrame:setAddonCharacter()
 end
 
 
-function listFrame:showResetBtn()
-	for k in next, self.filters do
-		if not self.filters[k] then
-			self.resetBtn:Show()
-			return
-		end
-	end
-	for _, k in ipairs(self.categoriesFilter) do
-		if not self.categoriesFilter[k] then
-			self.resetBtn:Show()
-			return
-		end
-	end
-	self.resetBtn:Hide()
-end
-
-
-function listFrame:setAllCategoryfilters(enabled)
-	for _, k in ipairs(self.categoriesFilter) do
-		self.categoriesFilter[k] = enabled
-	end
-end
-
-
-function listFrame:resetFilters()
-	for k in next, self.filters do
-		self.filters[k] = true
-	end
-	self:setAllCategoryfilters(true)
-	self:updateFilters()
-end
-
-
 do
 	local icon = " "..CreateAtlasMarkup(C_Texture.GetAtlasInfo("dropdown-hover-arrow") and "dropdown-hover-arrow" or "auctionhouse-ui-sortarrow", 10, 10)
 	local function getOrderIcon(metric)
@@ -547,7 +464,8 @@ do
 		self.averageCPU.topStr:SetFormattedText("%s %s%s", self.averageIcon, L["Average CPU"], getOrderIcon("average"))
 		self.peakCPU.topStr:SetFormattedText("%s %s%s", self.peakIcon, L["Peak CPU"], getOrderIcon("peak"))
 		self.encounterCPU.topStr:SetFormattedText("%s %s%s", self.encounterIcon, L["Encounter CPU"], getOrderIcon("encounter"))
-		self:sort()
+		self:setCategories()
+		--self:sort()
 	end
 end
 
@@ -615,64 +533,163 @@ function listFrame:sort(force)
 end
 
 
-function listFrame:setCollapsed(name, collapsed)
-	self.depCollapsed[name] = collapsed or nil
-end
+function listFrame:categorySort(categoryList)
+	local sortByTitle = self.config.sortByTitle == "title"
 
+	sort(categoryList, function(nameA, nameB)
+		if nameA == nameB then return false end
 
-function listFrame:isCollapsed(name)
-	return self.depCollapsed[name] and self.notSearched
-end
-
-
-function listFrame:setListGroup()
-	wipe(self.hasParentByName)
-	wipe(self.childByPName)
-
-	if not self.config.cpuSortBy and self.config.listGroup ~= "none" then
-		if self.config.listGroup == "dep" then
-			self:setChildByDeps()
-		elseif self.config.listGroup == "treeDep" then
-			self:setChildByTreeDeps()
-		elseif self.config.listGroup == "group" then
-			self:setChildByGroup()
+		if sortByTitle then
+			local val = strcmputf8i(self.titleByName[nameA], self.titleByName[nameB])
+			if val < 0 then return true
+			elseif val > 0 then return false end
 		end
-	end
 
-	self:updateData()
+		return strcmputf8i(nameA:lower(), nameB:lower()) < 0
+	end)
 end
 
 
 do
-	local function addMaxParents(self, name, pList)
+	local function addToCategory(self, name, category)
+		local list = self.categories[category]
+		if not list then
+			list = {filtred = {}, hasParentByName = {}, childByPName = {}}
+			self.categories[category] = list
+		end
+		list[#list + 1] = name
+	end
+
+	function listFrame:setCategories()
+		self.isCatView = not self.config.cpuSortBy and self.config.catGroup ~= nil
+
+		if self.isCatView then
+			self.categories = {}
+			self.uncategorized = {filtred = {}, hasParentByName = {}, childByPName = {}}
+
+			if self.config.catGroup == "cat" then
+				self.categoriesList = self.categoriesFilter
+				for i = 1, #self.sorted do
+					local name = self.sorted[i]
+					local category = C_AddOns.GetAddOnMetadata(name, "Category")
+					if category then
+						addToCategory(self, name, category)
+					else
+						self.uncategorized[#self.uncategorized + 1] = name
+					end
+				end
+			elseif self.config.catGroup == "tag" then
+				self.categoriesList = self.tags
+				for i = 1, #self.sorted do
+					local name = self.sorted[i]
+					local tags = self.addonTags[name]
+					if tags then
+						for tag in next, tags do
+							addToCategory(self, name, tag)
+						end
+					else
+						self.uncategorized[#self.uncategorized + 1] = name
+					end
+				end
+			end
+
+			for category, list in next, self.categories do
+				self:categorySort(list)
+			end
+			self:categorySort(self.uncategorized)
+		else
+			self.categories = nil
+			self.uncategorized = nil
+			self:sort()
+		end
+
+		self:updateFilters()
+	end
+end
+
+
+function listFrame:setCatCollapsed(name, collapsed)
+	self.catCollapsed[name] = collapsed or nil
+end
+
+
+function listFrame:isCatCollapsed(name, collapsed)
+	return self.catCollapsed[name] and self.notSearched
+end
+
+
+function listFrame:setGroupCollapsed(name, collapsed)
+	self.depCollapsed[name] = collapsed or nil
+end
+
+
+function listFrame:isGroupCollapsed(name)
+	return self.depCollapsed[name] and self.notSearched
+end
+
+
+function listFrame:setAllCollapsed(collapsed)
+	if self.isCatView then
+		for category, list in next, self.categories do
+			self:setCatCollapsed(category, collapsed)
+			for name in next, list.childByPName do
+				self:setGroupCollapsed(name, collapsed)
+			end
+		end
+	else
+		for name in next, self.childByPName do
+			self:setGroupCollapsed(name, collapsed)
+		end
+	end
+end
+
+
+function listFrame:setListGroup(filtred, hasParentByName, childByPName)
+	wipe(hasParentByName)
+	wipe(childByPName)
+
+	if not self.config.cpuSortBy and self.config.listGroup ~= "none" then
+		if self.config.listGroup == "dep" then
+			self:setChildByDeps(filtred, hasParentByName, childByPName)
+		elseif self.config.listGroup == "treeDep" then
+			self:setChildByTreeDeps(filtred, hasParentByName, childByPName)
+		elseif self.config.listGroup == "group" then
+			self:setChildByGroup(filtred, hasParentByName, childByPName)
+		end
+	end
+end
+
+
+do
+	local function addMaxParents(self, filtred, name, pList)
 		if self.circular[name] then return end
 		local deps = self.depsByName[name]
 		if deps ~= nil then
 			for i = 1, #deps do
 				local dName = deps[i]
-				if self.filtred[dName] then addMaxParents(self, dName, pList) end
+				if filtred[dName] then addMaxParents(self, filtred, dName, pList) end
 			end
 		else
 			pList[name] = true
 		end
 	end
 
-	function listFrame:setChildByDeps()
-		for i = 1, #self.filtred do
-			local name = self.filtred[i]
+	function listFrame:setChildByDeps(filtred, hasParentByName, childByPName)
+		for i = 1, #filtred do
+			local name = filtred[i]
 			local deps = self.depsByName[name]
 			if deps ~= nil then
 				for j = 1, #deps do
 					local dName = deps[j]
-					if self.filtred[dName] then
+					if filtred[dName] then
 						local pList = {}
-						addMaxParents(self, dName, pList)
+						addMaxParents(self, filtred, dName, pList)
 						if next(pList) then
-							self.hasParentByName[name] = true
+							hasParentByName[name] = true
 							for pName in next, pList do
-								local childs = self.childByPName[pName]
+								local childs = childByPName[pName]
 								if childs then tInsertUnique(childs, name)
-								else self.childByPName[pName] = {name} end
+								else childByPName[pName] = {name} end
 							end
 						end
 					end
@@ -685,7 +702,7 @@ end
 
 do
 	local cache = {}
-	local function checkDeps(self, dName, name)
+	local function checkDeps(self, filtred, dName, name)
 		if self.circular[name] then return true end
 		local cacheKey = dName.."|"..name
 		if cache[cacheKey] ~= nil then
@@ -695,7 +712,7 @@ do
 		if deps ~= nil then
 			for i = 1, #deps do
 				local pName = deps[i]
-				if self.filtred[pName] and (dName == pName or checkDeps(self, dName, pName)) then
+				if filtred[pName] and (dName == pName or checkDeps(self, filtred, dName, pName)) then
 					cache[cacheKey] = true
 					return true
 				end
@@ -705,29 +722,29 @@ do
 		return false
 	end
 
-	function listFrame:setChildByTreeDeps()
-		for i = 1, #self.filtred do
-			local name = self.filtred[i]
+	function listFrame:setChildByTreeDeps(filtred, hasParentByName, childByPName)
+		for i = 1, #filtred do
+			local name = filtred[i]
 			local deps = self.depsByName[name]
 			if deps ~= nil then
 				for j = 1, #deps do
 					local dName = deps[j]
-					if self.filtred[dName] then
+					if filtred[dName] then
 						local addChild = true
 						for n = 1, #deps do
 							if n ~= j then
 								local pName = deps[n]
-								if self.filtred[pName] and checkDeps(self, dName, pName) then
+								if filtred[pName] and checkDeps(self, filtred, dName, pName) then
 									addChild = false
 									break
 								end
 							end
 						end
 						if addChild then
-							self.hasParentByName[name] = true
-							local childs = self.childByPName[dName]
+							hasParentByName[name] = true
+							local childs = childByPName[dName]
 							if childs then childs[#childs + 1] = name
-							else self.childByPName[dName] = {name} end
+							else childByPName[dName] = {name} end
 						end
 					end
 				end
@@ -738,17 +755,17 @@ do
 end
 
 
-function listFrame:setChildByGroup()
-	for i = 1, #self.filtred do
-		local name = self.filtred[i]
+function listFrame:setChildByGroup(filtred, hasParentByName, childByPName)
+	for i = 1, #filtred do
+		local name = filtred[i]
 		local gName = C_AddOns.GetAddOnMetadata(name, "Group")
 
 		if gName and name ~= gName then
-			if self.filtred[gName] then
-				self.hasParentByName[name] = true
-				local childs = self.childByPName[gName]
+			if filtred[gName] then
+				hasParentByName[name] = true
+				local childs = childByPName[gName]
 				if childs then childs[#childs + 1] = name
-				else self.childByPName[gName] = {name} end
+				else childByPName[gName] = {name} end
 			end
 		end
 	end
@@ -789,12 +806,12 @@ function listFrame:enableAddonDependencies(name, enabled, context)
 end
 
 
-function listFrame:enableAddonChildren(name, enabled)
-	local childs = self.childByPName[name]
+function listFrame:enableAddonChildren(childList, name, enabled)
+	local childs = childList[name]
 	if not childs then return end
 	for _, aName in ipairs(childs) do
 		self:enableAddon(aName, enabled)
-		self:enableAddonChildren(aName, enabled)
+		self:enableAddonChildren(childList, aName, enabled)
 	end
 end
 
@@ -844,8 +861,8 @@ do
 	end
 
 	function listFrame:updateTooltip()
-		if not self.tooltipName then return end
-		local name, title, notes, _, reason, security = C_AddOns.GetAddOnInfo(self.tooltipName)
+		if not self.tooltipData then return end
+		local name, title, notes, _, reason, security = C_AddOns.GetAddOnInfo(self.tooltipData.name)
 
 		GameTooltip:ClearLines()
 		if security == BANNED then
@@ -880,6 +897,7 @@ do
 
 			GameTooltip:AddLine(self:getAddonDepsString(name), nil, nil, nil, true)
 			addLineNotEmpty(CATEGORIES, C_AddOns.GetAddOnMetadata(name, "Category"))
+			addLineNotEmpty(L["tags"], self:getAddonTagsStr(name))
 			addLineNotEmpty(L["Profiles with addon"], self:getProfilesWithAddon(name))
 
 			if notes then
@@ -888,7 +906,7 @@ do
 			end
 
 			GameTooltip:AddLine(" ");
-			if self.childByPName[self.tooltipName] then
+			if self.tooltipData.isParent then
 				GameTooltip:AddLine(self.LEFT_MOUSE_ICON..L["Left+Shift with children"])
 			end
 			GameTooltip:AddLine(self.LEFT_MOUSE_ICON..L["Left+Alt to lock/unclock"])
@@ -1046,6 +1064,37 @@ function listFrame:parentInit(f, node)
 end
 
 
+function listFrame:categoryInit(f, node)
+	local data = node:GetData()
+	f.title:SetText(data.name)
+
+	local len = #data.category
+	local n = 0
+	for i = 1, len do
+		if C_AddOns.GetAddOnEnableState(data.category[i], self.addonCharacter) == 2 then
+			n = n + 1
+		end
+	end
+
+	f.toggleBtn.check:ClearAllPoints()
+	if n == len then
+		f.checked = 1
+		f.toggleBtn.check:SetAtlas("common-dropdown-icon-checkmark-yellow", true)
+		f.toggleBtn.check:SetPoint("LEFT", f.toggleBtn.bg)
+	elseif n > 0 then
+		f.toggleBtn.check:SetColorTexture(1, .8, 0)
+		f.toggleBtn.check:SetSize(8, 8)
+		f.toggleBtn.check:SetPoint("CENTER", f.toggleBtn.bg)
+		f.checked = 2
+	else
+		f.toggleBtn.check:SetTexture()
+		f.checked = nil
+	end
+
+	f:updateState()
+end
+
+
 function listFrame:updateList()
 	self.doNotHideMenu = true
 	self.scrollBox:SetDataProvider(self.dataProvider, ScrollBoxConstants.RetainScrollPosition)
@@ -1054,14 +1103,37 @@ end
 
 
 do
-	local function addChilds(self, pNode, pList)
+	local function addChilds(self, childByPName, pNode, pList)
 		for i = 1, #pList do
 			local name = pList[i]
-			local list = self.childByPName[name]
-			local node = pNode:Insert({name = name, isParent = list and true})
+			local list = childByPName[name]
+			local data = {name = name, childList = childByPName}
+			if list then data.isParent = true
+			else data.isNormal = true end
+			local node = pNode:Insert(data)
+
 			if list then
-				node:SetCollapsed(self:isCollapsed(name))
-				addChilds(self, node, list)
+				node:SetCollapsed(self:isGroupCollapsed(name))
+				addChilds(self, childByPName, node, list)
+			end
+		end
+	end
+
+	local function addParents(self, hasParentByName, childByPName, pNode, pList)
+		for i = 1, #pList do
+			local name = pList[i]
+
+			if not hasParentByName[name] then
+				local list = childByPName[name]
+				local data = {name = name, childList = childByPName}
+				if list then data.isParent = true
+				else data.isNormal = true end
+				local node = pNode:Insert(data)
+
+				if list then
+					node:SetCollapsed(self:isGroupCollapsed(name))
+					addChilds(self, childByPName, node, list)
+				end
 			end
 		end
 	end
@@ -1069,16 +1141,27 @@ do
 	function listFrame:updateData()
 		self.dataProvider = CreateTreeDataProvider()
 
-		for i = 1, #self.filtred do
-			local name = self.filtred[i]
-			if not self.hasParentByName[name] then
-				local list = self.childByPName[name]
-				local node = self.dataProvider:Insert({name = name, isParent = list and true})
-				if list then
-					node:SetCollapsed(self:isCollapsed(name))
-					addChilds(self, node, list)
+		if self.isCatView then
+			local addDevider = false
+			for i = 1, #self.categoriesList do
+				local catName = self.categoriesList[i]
+				local cat = self.categories[catName]
+
+				if cat and #cat.filtred > 0 then
+					addDevider = true
+					local cNode = self.dataProvider:Insert({name = catName, category = cat, isCategory = true})
+					cNode:SetCollapsed(self:isCatCollapsed(catName))
+					addParents(self, cat.hasParentByName, cat.childByPName, cNode, cat.filtred)
 				end
 			end
+
+			if #self.uncategorized.filtred > 0 then
+				if addDevider then self.dataProvider:Insert({}) end
+				local uncat = self.uncategorized
+				addParents(self, uncat.hasParentByName, uncat.childByPName, self.dataProvider, uncat.filtred)
+			end
+		else
+			addParents(self, self.hasParentByName, self.childByPName, self.dataProvider, self.filtred)
 		end
 
 		self:updateList()
@@ -1086,15 +1169,12 @@ do
 end
 
 
-function listFrame:updateFilters()
-	local text = self.searchBox:GetText():trim():lower()
+function listFrame:setFiltred(text, list, filtred)
 	local searchBy = self.config.searchBy
-	local notSearched = #text == 0
-	self.notSearched = notSearched
-	wipe(self.filtred)
+	wipe(filtred)
 
-	for i = 1, #self.sorted do
-		local name = self.sorted[i]
+	for i = 1, #list do
+		local name = list[i]
 		local author = searchBy.author and C_AddOns.GetAddOnMetadata(name, "Author")
 		local category = C_AddOns.GetAddOnMetadata(name, "Category")
 		local loadable, reason = C_AddOns.IsAddOnLoadable(name, self.addonCharacter)
@@ -1102,17 +1182,39 @@ function listFrame:updateFilters()
 
 		if (enabled and self.filters.enabled or not enabled and self.filters.disabled)
 		and self.categoriesFilter[category or "rest"]
-		and (notSearched
+		and self:getTagFilter(name)
+		and (self.notSearched
 			or searchBy.name and name:lower():find(text, 1, true)
 			or searchBy.title and self.titleByName[name]:find(text, 1, true)
 			or author and author:lower():find(text, 1, true)
-			or searchBy.category and category and category:lower():find(text, 1, true))
+			or searchBy.category and category and category:lower():find(text, 1, true)
+			or searchBy.tags and self:findTags(name, text))
 		then
-			self.filtred[name] = true
-			self.filtred[#self.filtred + 1] = name
+			filtred[name] = true
+			filtred[#filtred + 1] = name
 		end
 	end
+end
 
+
+function listFrame:updateFilters()
+	local text = self.searchBox:GetText():trim():lower()
+	self.notSearched = #text == 0
+	self.asd = debugprofilestart()
+
+	if self.isCatView then
+		for category, list in next, self.categories do
+			self:setFiltred(text, list, list.filtred)
+			self:setListGroup(list.filtred, list.hasParentByName, list.childByPName)
+		end
+		local uncat = self.uncategorized
+		self:setFiltred(text, uncat, uncat.filtred)
+		self:setListGroup(uncat.filtred, uncat.hasParentByName, uncat.childByPName)
+	else
+		self:setFiltred(text, self.sorted, self.filtred)
+		self:setListGroup(self.filtred, self.hasParentByName, self.childByPName)
+	end
+
+	self:updateData()
 	self:showResetBtn()
-	self:setListGroup()
 end

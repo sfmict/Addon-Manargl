@@ -553,7 +553,8 @@ end
 
 function listFrame:createProfile()
 	local dialog = StaticPopup_Show(self.addonName.."NEW_PROFILE", nil, nil, function(popup)
-		local text = popup.editBox:GetText()
+		local editBox = popup.editBox or popup.EditBox
+		local text = editBox:GetText()
 		popup:Hide()
 		if text and text ~= "" then
 			local profile = self:getProfileByName(text)
@@ -570,15 +571,17 @@ function listFrame:createProfile()
 		end
 	end)
 	if dialog and lastProfileName then
-		dialog.editBox:SetText(lastProfileName)
-		dialog.editBox:HighlightText()
+		local editBox = dialog.editBox or dialog.EditBox
+		editBox:SetText(lastProfileName)
+		editBox:HighlightText()
 	end
 end
 
 
 function listFrame:editProfile(editProfile)
 	local dialog = StaticPopup_Show(self.addonName.."EDIT_PROFILE", nil, nil, function(popup)
-		local text = popup.editBox:GetText()
+		local editBox = popup.editBox or popup.EditBox
+		local text = editBox:GetText()
 		popup:Hide()
 		if text and text ~= editProfile.name and text ~= "" then
 			local profile = self:getProfileByName(text)
@@ -593,8 +596,9 @@ function listFrame:editProfile(editProfile)
 		end
 	end)
 	if dialog then
-		dialog.editBox:SetText(lastProfileName or editProfile.name)
-		dialog.editBox:HighlightText()
+		local editBox = dialog.editBox or dialog.EditBox
+		editBox:SetText(lastProfileName or editProfile.name)
+		editBox:HighlightText()
 	end
 end
 

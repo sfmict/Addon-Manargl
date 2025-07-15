@@ -176,6 +176,81 @@
 		</Frames>
 	</Frame>
 
+	<Button name="AddonMgrcollapseExpandTemplate" virtual="true">
+		<Size x="10" y="16"/>
+		<NormalTexture parentKey="normal" atlas="bag-arrow"/>
+		<PushedTexture parentKey="pushed" atlas="bag-arrow"/>
+		<HighlightTexture parentKey="highlight" alpha="0.4" alphaMode="ADD" atlas="bag-arrow"/>
+	</Button>
+
+	<Button name="AddonMgrListCategory" mixin="AddonMgrListCategoryMixin" virtual="true">
+		<Layers>
+			<Layer level="OVERLAY" textureSubLevel="1">
+				<Texture parentKey="highlight" atlas="glues-characterselect-button-collapseexpand-hover" desaturated="true" hidden="true">
+					<Anchors>
+						<Anchor point="TOPLEFT" x="2" y="0"/>
+						<Anchor point="BOTTOMRIGHT" x="-2" y="0"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="OVERLAY" textureSubLevel="2">
+				<Texture parentKey="icon" atlas="glues-characterselect-icon-minus" useAtlasSize="true">
+					<Anchors>
+						<Anchor point="LEFT" x="5" y="1"/>
+					</Anchors>
+				</Texture>
+				<FontString inherits="GameFontNormal" justifyH="CENTER" parentKey="title" wordwrap="false">
+					<Anchors>
+						<Anchor point="LEFT" x="50"/>
+						<Anchor point="RIGHT" x="-50"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<NormalTexture parentKey="normalTexture" atlas="glues-characterSelect-button-collapseExpand" desaturated="true"/>
+		<PushedTexture parentKey="pushedTexture" atlas="glues-characterSelect-button-collapseExpand-pressed" desaturated="true"/>
+		<Frames>
+			<Button parentKey="toggleBtn" alpha=".7" propagateMouseInput="Motion">
+				<Size x="16" y="16"/>
+				<Anchors>
+					<Anchor point="LEFT" x="33" y="1"/>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture parentKey="bg" atlas="common-dropdown-ticksquare" useAtlasSize="true">
+							<Anchors>
+								<Anchor point="CENTER"/>
+							</Anchors>
+						</Texture>
+						<Texture parentKey="check"/>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnEnter>self:SetAlpha(1)</OnEnter>
+					<OnLeave>self:SetAlpha(.7)</OnLeave>
+				</Scripts>
+			</Button>
+		</Frames>
+		<Scripts>
+			<OnLoad method="onLoad"/>
+			<OnClick method="onClick"/>
+			<OnEnter method="onEnter"/>
+			<OnLeave method="onLeave"/>
+		</Scripts>
+	</Button>
+
+	<Frame name="AddonMgrListDevider" virtual="true">
+		<Layers>
+			<Layer level="ARTWORK">
+				<Texture parentKey="Divider" atlas="glues-characterSelect-cardDivider" useAtlasSize="true">
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+	</Frame>
+
 	<Button name="AddonMgrListNormal" registerForClicks="LeftButtonUp, RightButtonUp" mixin="AddonMgrListNormalMixin" virtual="true">
 		<Layers>
 			<Layer level="BACKGROUND">
@@ -199,15 +274,13 @@
 						<Anchor point="LEFT" x="40"/>
 					</Anchors>
 				</Texture>
-				<FontString inherits="GameFontNormalSmall" justifyH="RIGHT" parentKey="status">
-					<Size y="12"/>
+				<FontString inherits="GameFontNormalSmall" justifyH="RIGHT" parentKey="status" wordwrap="false">
 					<Anchors>
 						<Anchor point="RIGHT"/>
 					</Anchors>
 					<Color r=".5" g=".5" b=".5"/>
 				</FontString>
-				<FontString inherits="GameFontNormal" justifyH="LEFT" parentKey="title" >
-					<Size y="12"/>
+				<FontString inherits="GameFontNormal" justifyH="LEFT" parentKey="title" wordwrap="false">
 					<Anchors>
 						<Anchor point="LEFT" relativeKey="$parent.icon" relativePoint="RIGHT" x="2"/>
 						<Anchor point="RIGHT" relativeKey="$parent.status" relativePoint="LEFT" x="-2"/>
@@ -254,14 +327,10 @@
 
 	<Button name="AddonMgrListParent" registerForClicks="LeftButtonUp, RightButtonUp, MiddleButtonUp" inherits="AddonMgrListNormal" virtual="true">
 		<Frames>
-			<Button parentKey="collapseExpand" mixin="AddonMgrListParentCategoryMixin">
-				<Size x="10" y="16"/>
+			<Button parentKey="collapseExpand" mixin="AddonMgrListParentMixin" inherits="AddonMgrcollapseExpandTemplate">
 				<Anchors>
 					<Anchor point="LEFT"/>
 				</Anchors>
-				<NormalTexture parentKey="mormal" atlas="bag-arrow"/>
-				<PushedTexture parentKey="pushed" atlas="bag-arrow"/>
-				<HighlightTexture parentKey="highlight" alpha="0.4" alphaMode="ADD" atlas="bag-arrow"/>
 				<Scripts>
 					<OnClick method="onClick"/>
 				</Scripts>

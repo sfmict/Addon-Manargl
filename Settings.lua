@@ -84,18 +84,14 @@ listFrame:HookScript("OnShow", function(self)
 			info.isTitle = nil
 			info.text = L["Collapse All"]
 			info.func = function()
-				for i in next, self.childByPIndex do
-					self:setCollapsed(i, true)
-				end
+				self:setAllCollapsed(true)
 				self:updateData()
 			end
 			dd:ddAddButton(info, level)
 
 			info.text = L["Expand All"]
 			info.func = function()
-				for i in next, self.childByPIndex do
-					self:setCollapsed(i, false)
-				end
+				self:setAllCollapsed(false)
 				self:updateData()
 			end
 			dd:ddAddButton(info, level)
@@ -143,6 +139,10 @@ listFrame:HookScript("OnShow", function(self)
 			info.checked = nil
 			info.notCheckable = true
 			info.hasArrow = true
+			info.text = L["Categories by"]
+			info.value = "listCat"
+			dd:ddAddButton(info, level)
+
 			info.text = L["Group by"]
 			info.value = "listGroup"
 			dd:ddAddButton(info, level)
@@ -279,6 +279,29 @@ listFrame:HookScript("OnShow", function(self)
 				dd:ddAddButton(info, level)
 			end
 
+		elseif value == "listCat" then
+			info.keepShownOnClick = true
+
+			info.func = function(btn)
+				self.config.catGroup = btn.value
+				self.config.cpuSortBy = nil
+				self:updateCpuButtons()
+				dd:ddRefresh(level)
+			end
+			info.checked = function(btn) return btn.value == self.config.catGroup end
+
+			info.text = CATEGORIES
+			info.value = "cat"
+			dd:ddAddButton(info, level)
+
+			info.text = L["tags"]
+			info.value = "tag"
+			dd:ddAddButton(info, level)
+
+			info.text = NONE
+			info.value = nil
+			dd:ddAddButton(info, level)
+
 		elseif value == "listGroup" then
 			info.keepShownOnClick = true
 
@@ -305,6 +328,7 @@ listFrame:HookScript("OnShow", function(self)
 			info.text = NONE
 			info.value = "none"
 			dd:ddAddButton(info, level)
+
 		elseif value == "sort" then
 			info.keepShownOnClick = true
 
@@ -378,6 +402,10 @@ listFrame:HookScript("OnShow", function(self)
 
 			info.text = CATEGORY
 			info.value = "category"
+			dd:ddAddButton(info, level)
+
+			info.text = L["tags"]
+			info.value = "tags"
 			dd:ddAddButton(info, level)
 		end
 	end)

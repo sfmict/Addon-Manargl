@@ -8,7 +8,8 @@ listFrame:HookScript("OnShow", function(self)
 	self.contextMenu:ddHideWhenButtonHidden(self.scrollBox)
 	self.contextMenu:ddSetDisplayMode("menu")
 
-	self.contextMenu:ddSetInitFunc(function(dd, level, name)
+	self.contextMenu:ddSetInitFunc(function(dd, level, value)
+		local name = self.contextMenuData.name
 		local info = {}
 
 		if level == 1 then
@@ -39,11 +40,11 @@ listFrame:HookScript("OnShow", function(self)
 			info.notCheckable = true
 			info.disabled = function() return self.locked[name] end
 
-			if self.childByPName[name] then
+			if self.contextMenuData.isParent then
 				info.text = checked and L["Disable with children"] or L["Enalbe with children"]
 				info.func = function()
 					self:enableAddon(name, not checked)
-					self:enableAddonChildren(name, not checked)
+					self:enableAddonChildren(self.contextMenuData.childList, name, not checked)
 					self:updateList()
 					self:updateReloadButton()
 				end
@@ -63,12 +64,18 @@ listFrame:HookScript("OnShow", function(self)
 
 			info.disabled = nil
 			info.func = nil
+			info.keepShownOnClick = true
+			info.hasArrow = true
 
 			if #self.profiles > 0 then
-				info.keepShownOnClick = true
-				info.hasArrow = true
 				info.text = L["Enabled in profile"]
-				info.value = name
+				info.value = "profile"
+				dd:ddAddButton(info, value)
+			end
+
+			if #self.tags > 0 then
+				info.text = L["tags"]
+				info.value = "tags"
 				dd:ddAddButton(info, value)
 			end
 
@@ -78,7 +85,7 @@ listFrame:HookScript("OnShow", function(self)
 			info.text = CANCEL
 			dd:ddAddButton(info, level)
 
-		else
+		elseif value == "profile" then
 			local list = {}
 
 			local func = function(btn, _,_, checked)
@@ -106,6 +113,31 @@ listFrame:HookScript("OnShow", function(self)
 
 			info.list = list
 			dd:ddAddButton(info, level)
+
+		elseif value == "tags" then
+			local list = {}
+
+			local func = function(btn, _,_, checked)
+				if checked then
+					self:setAddonTag(name, btn.value)
+				else
+					self:removeAddonTag(name, btn.value, true)
+				end
+			end
+
+			for i, tag in ipairs(self.tags) do
+				list[i] = {
+					keepShownOnClick = true,
+					isNotRadio = true,
+					text = tag,
+					value = tag,
+					func = func,
+					checked = self:hasAddonTag(name, tag),
+				}
+			end
+
+			info.list = list
+			dd:ddAddButton(info, level)
 		end
 	end)
 
@@ -114,6 +146,48 @@ listFrame:HookScript("OnShow", function(self)
 		self.contextMenu:ddOnHide()
 	end)
 end)
+
+
+AddonMgrListCategoryMixin = {}
+
+
+do
+	local function toggleOnClick(btn)
+		local parent = btn:GetParent()
+		local category = parent:GetData().category
+		for i = 1, #category do
+			listFrame:enableAddon(category[i], parent.checked ~= 1)
+		end
+		listFrame:updateList()
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+	end
+
+	function AddonMgrListCategoryMixin:onLoad()
+		self.toggleBtn:SetScript("OnClick", toggleOnClick)
+	end
+end
+
+
+function AddonMgrListCategoryMixin:onEnter()
+	self.highlight:Show()
+end
+
+
+function AddonMgrListCategoryMixin:onLeave()
+	self.highlight:Hide()
+end
+
+
+function AddonMgrListCategoryMixin:onClick()
+	local collapsed = self:GetElementData():ToggleCollapsed(TreeDataProviderConstants.RetainChildCollapse, TreeDataProviderConstants.DoInvalidation)
+	listFrame:setCatCollapsed(self:GetData().name, collapsed)
+	self:updateState()
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+end
+
+function AddonMgrListCategoryMixin:updateState()
+	self.icon:SetAtlas(self:GetElementData():IsCollapsed() and "glues-characterselect-icon-plus" or "glues-characterselect-icon-minus", true)
+end
 
 
 AddonMgrListNormalMixin = {}
@@ -139,7 +213,7 @@ do
 				PlaySound(checked and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON or SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
 				listFrame:enableAddon(parent.name, checked)
 				if IsShiftKeyDown() then
-					listFrame:enableAddonChildren(parent.name, checked)
+					listFrame:enableAddonChildren(parent:GetData().childList, parent.name, checked)
 				end
 				listFrame:updateReloadButton()
 				listFrame:updateList()
@@ -171,15 +245,16 @@ function AddonMgrListNormalMixin:onClick(button)
 	elseif button == "MiddleButton" then
 		self.collapseExpand:Click()
 	else
-		listFrame.contextMenu:ddToggle(1, self:GetData().name, "cursor")
+		listFrame.contextMenuData = self:GetData()
+		listFrame.contextMenu:ddToggle(1, nil, "cursor")
 	end
 end
 
 
 function AddonMgrListNormalMixin:onEnter()
-	local name = self:GetData().name
-	if listFrame.tooltipName == name then return end
-	listFrame.tooltipName = name
+	local data = self:GetData()
+	if listFrame.tooltipData == data then return end
+	listFrame.tooltipData = data
 	GameTooltip:SetOwner(self, "ANCHOR_NONE")
 	GameTooltip:SetPoint("LEFT", self, "RIGHT")
 	listFrame:updateTooltip()
@@ -194,20 +269,20 @@ function AddonMgrListNormalMixin:onLeave()
 end
 
 
-AddonMgrListParentCategoryMixin = {}
+AddonMgrListParentMixin = {}
 
 
-function AddonMgrListParentCategoryMixin:onClick()
+function AddonMgrListParentMixin:onClick()
 	local collapsed = self.node:ToggleCollapsed(TreeDataProviderConstants.RetainChildCollapse, TreeDataProviderConstants.DoInvalidation)
-	listFrame:setCollapsed(self.node:GetData().name, collapsed)
+	listFrame:setGroupCollapsed(self:GetData().name, collapsed)
 	self:updateState()
 	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 end
 
 
-function AddonMgrListParentCategoryMixin:updateState()
+function AddonMgrListParentMixin:updateState()
 	local arrowRotation = self.node:IsCollapsed() and math.pi or math.pi * .5
-	self.mormal:SetRotation(arrowRotation)
+	self.normal:SetRotation(arrowRotation)
 	self.pushed:SetRotation(arrowRotation)
 	self.highlight:SetRotation(arrowRotation)
 end
