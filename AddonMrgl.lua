@@ -1059,7 +1059,6 @@ end
 
 function listFrame:parentInit(f, node)
 	self:normalInit(f, node)
-	f.collapseExpand.node = node
 	f.collapseExpand:updateState()
 end
 

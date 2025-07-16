@@ -185,6 +185,7 @@ function AddonMgrListCategoryMixin:onClick()
 	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 end
 
+
 function AddonMgrListCategoryMixin:updateState()
 	self.icon:SetAtlas(self:GetElementData():IsCollapsed() and "glues-characterselect-icon-plus" or "glues-characterselect-icon-minus", true)
 end
@@ -263,7 +264,7 @@ end
 
 function AddonMgrListNormalMixin:onLeave()
 	if self:IsShown() then
-		listFrame.tooltipName = nil
+		listFrame.tooltipData = nil
 		GameTooltip:Hide()
 	end
 end
@@ -273,15 +274,16 @@ AddonMgrListParentMixin = {}
 
 
 function AddonMgrListParentMixin:onClick()
-	local collapsed = self.node:ToggleCollapsed(TreeDataProviderConstants.RetainChildCollapse, TreeDataProviderConstants.DoInvalidation)
-	listFrame:setGroupCollapsed(self:GetData().name, collapsed)
+	local node = self:GetParent():GetElementData()
+	local collapsed = node:ToggleCollapsed(TreeDataProviderConstants.RetainChildCollapse, TreeDataProviderConstants.DoInvalidation)
+	listFrame:setGroupCollapsed(node:GetData().name, collapsed)
 	self:updateState()
 	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 end
 
 
 function AddonMgrListParentMixin:updateState()
-	local arrowRotation = self.node:IsCollapsed() and math.pi or math.pi * .5
+	local arrowRotation = self:GetParent():GetElementData():IsCollapsed() and math.pi or math.pi * .5
 	self.normal:SetRotation(arrowRotation)
 	self.pushed:SetRotation(arrowRotation)
 	self.highlight:SetRotation(arrowRotation)
