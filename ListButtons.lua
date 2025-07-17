@@ -8,7 +8,7 @@ listFrame:HookScript("OnShow", function(self)
 	self.contextMenu:ddHideWhenButtonHidden(self.scrollBox)
 	self.contextMenu:ddSetDisplayMode("menu")
 
-	self.contextMenu:ddSetInitFunc(function(dd, level, value)
+	self.addonContextMenu = function(dd, level, value)
 		local name = self.contextMenuData.name
 		local info = {}
 
@@ -148,7 +148,28 @@ listFrame:HookScript("OnShow", function(self)
 			info.func = function() self:addTag(name) end
 			dd:ddAddButton(info, level)
 		end
-	end)
+	end
+
+	self.tagCategoryContextMenu = function(dd, level)
+		local info = {}
+		local name = self.contextMenuData.name
+
+		info.notCheckable = true
+		info.keepShownOnClick = true
+		info.isTitle = true
+		info.text = name
+		dd:ddAddButton(info, level)
+
+		info.keepShownOnClick = nil
+		info.isTitle = nil
+		info.text = L["Delete tag"]
+		info.func = function() self:deleteTag(name) end
+		dd:ddAddButton(info, level)
+
+		info.func = nil
+		info.text = CANCEL
+		dd:ddAddButton(info, level)
+	end
 
 	self.scrollBox:RegisterCallback(self.scrollBox.Event.OnDataRangeChanged, function()
 		if self.doNotHideMenu then return end
@@ -187,11 +208,17 @@ function AddonMgrListCategoryMixin:onLeave()
 end
 
 
-function AddonMgrListCategoryMixin:onClick()
-	local collapsed = self:GetElementData():ToggleCollapsed(TreeDataProviderConstants.RetainChildCollapse, TreeDataProviderConstants.DoInvalidation)
-	listFrame:setCatCollapsed(self:GetData().name, collapsed)
-	self:updateState()
-	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+function AddonMgrListCategoryMixin:onClick(button)
+	if button == "LeftButton" then
+		local collapsed = self:GetElementData():ToggleCollapsed(TreeDataProviderConstants.RetainChildCollapse, TreeDataProviderConstants.DoInvalidation)
+		listFrame:setCatCollapsed(self:GetData().name, collapsed)
+		self:updateState()
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+	elseif listFrame.config.catGroup == "tag" then
+		listFrame.contextMenuData = self:GetData()
+		listFrame.contextMenu:ddSetInitFunc(listFrame.tagCategoryContextMenu)
+		listFrame.contextMenu:ddToggle(1, nil, "cursor")
+	end
 end
 
 
@@ -256,6 +283,7 @@ function AddonMgrListNormalMixin:onClick(button)
 		self.collapseExpand:Click()
 	else
 		listFrame.contextMenuData = self:GetData()
+		listFrame.contextMenu:ddSetInitFunc(listFrame.addonContextMenu)
 		listFrame.contextMenu:ddToggle(1, nil, "cursor")
 	end
 end

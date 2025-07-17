@@ -39,6 +39,7 @@ L["tags"] = "Теги"
 L["No tag"] = "Без тегов"
 L["With all tags"] = "Со всеми тегами"
 L["Add tag"] = "Добавить тег"
+L["Delete tag"] = "Удалить тег"
 -- PROFILES
 L["Profiles"] = "Профили"
 L["Characters"] = "Персонажи"

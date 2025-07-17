@@ -183,7 +183,7 @@
 		<HighlightTexture parentKey="highlight" alpha="0.4" alphaMode="ADD" atlas="bag-arrow"/>
 	</Button>
 
-	<Button name="AddonMgrListCategory" mixin="AddonMgrListCategoryMixin" virtual="true">
+	<Button name="AddonMgrListCategory" registerForClicks="LeftButtonUp, RightButtonUp" mixin="AddonMgrListCategoryMixin" virtual="true">
 		<Layers>
 			<Layer level="OVERLAY" textureSubLevel="1">
 				<Texture parentKey="highlight" atlas="glues-characterselect-button-collapseexpand-hover" desaturated="true" hidden="true">

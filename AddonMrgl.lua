@@ -1198,7 +1198,6 @@ end
 function listFrame:updateFilters()
 	local text = self.searchBox:GetText():trim():lower()
 	self.notSearched = #text == 0
-	self.asd = debugprofilestart()
 
 	if self.isCatView then
 		for category, list in next, self.categories do
