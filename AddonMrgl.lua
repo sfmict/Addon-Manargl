@@ -465,7 +465,6 @@ do
 		self.peakCPU.topStr:SetFormattedText("%s %s%s", self.peakIcon, L["Peak CPU"], getOrderIcon("peak"))
 		self.encounterCPU.topStr:SetFormattedText("%s %s%s", self.encounterIcon, L["Encounter CPU"], getOrderIcon("encounter"))
 		self:setCategories()
-		--self:sort()
 	end
 end
 

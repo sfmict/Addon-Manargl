@@ -242,7 +242,7 @@ function listFrame:resetFilters()
 end
 
 
-function listFrame:addTag()
+function listFrame:addTag(name)
 	StaticPopup_Show(self.addonName.."ADD_TAG", nil, nil, function(popup, text)
 		for i, tag in ipairs(self.tags) do
 			if tag == text then
@@ -254,6 +254,7 @@ function listFrame:addTag()
 		tinsert(self.tags, text)
 		sort(self.tags)
 		self.tagsFilter[text] = true
+		if name then self:setAddonTag(name, text) end
 	end)
 end
 

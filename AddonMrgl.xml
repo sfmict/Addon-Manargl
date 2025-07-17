@@ -201,8 +201,8 @@
 				</Texture>
 				<FontString inherits="GameFontNormal" justifyH="CENTER" parentKey="title" wordwrap="false">
 					<Anchors>
-						<Anchor point="LEFT" x="50"/>
-						<Anchor point="RIGHT" x="-50"/>
+						<Anchor point="LEFT" x="50" y="2"/>
+						<Anchor point="RIGHT" x="-50" y="2"/>
 					</Anchors>
 				</FontString>
 			</Layer>

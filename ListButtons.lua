@@ -36,6 +36,7 @@ listFrame:HookScript("OnShow", function(self)
 			info.checked = self.locked[name]
 			dd:ddAddButton(info, level)
 
+			info.checked = nil
 			info.keepShownOnClick = nil
 			info.notCheckable = true
 			info.disabled = function() return self.locked[name] end
@@ -73,11 +74,9 @@ listFrame:HookScript("OnShow", function(self)
 				dd:ddAddButton(info, value)
 			end
 
-			if #self.tags > 0 then
-				info.text = L["tags"]
-				info.value = "tags"
-				dd:ddAddButton(info, value)
-			end
+			info.text = L["tags"]
+			info.value = "tags"
+			dd:ddAddButton(info, value)
 
 			info.keepShownOnClick = nil
 			info.hasArrow = nil
@@ -137,6 +136,16 @@ listFrame:HookScript("OnShow", function(self)
 			end
 
 			info.list = list
+			dd:ddAddButton(info, level)
+			info.list = nil
+
+			if #self.tags > 0 then
+				dd:ddAddSeparator(level)
+			end
+
+			info.notCheckable = true
+			info.text = L["Add tag"]
+			info.func = function() self:addTag(name) end
 			dd:ddAddButton(info, level)
 		end
 	end)
