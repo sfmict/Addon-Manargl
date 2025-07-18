@@ -73,7 +73,7 @@ function listFrame:ADDON_LOADED(addonName)
 	end
 
 	function self:ADDON_LOADED(addonName)
-		if self.dataProvider and self.filtred[addonName] and self:IsShown() then
+		if self.dataProvider and self:IsShown() and self:isAddonShown(addonName) then
 			UpdateAddOnMemoryUsage()
 			self:sort()
 		end
@@ -936,6 +936,14 @@ function listFrame:updateReloadButton()
 		self.okay:SetText(OKAY)
 		self.shouldReload = nil
 	end
+end
+
+
+function listFrame:isAddonShown(name)
+	for i, f in ipairs(self.view:GetFrames()) do
+		if f.name == name then return true end
+	end
+	return false
 end
 
 
