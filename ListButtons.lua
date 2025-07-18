@@ -189,6 +189,7 @@ do
 			listFrame:enableAddon(category[i], parent.checked ~= 1)
 		end
 		listFrame:updateList()
+		listFrame:updateReloadButton()
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 	end
 
