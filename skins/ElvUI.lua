@@ -6,29 +6,6 @@ local listFrame = AddonMgrAddonList
 listFrame.minimapBtnMenu:ddSetDisplayMode("ElvUI")
 
 
-local function setCheckColor(t, r)
-	if r == 1 and not t:IsDesaturated() then
-		t:dSetVertexColor(1, .8, .1)
-	end
-end
-
-
-local function btnInit(self, f)
-	if not f.isSkinned then
-		local r, g, b = f.check.CheckedTexture:GetVertexColor()
-		S:HandleCheckBox(f.check)
-		f.check.CheckedTexture:SetVertexColor(r, g, b)
-		f.check.CheckedTexture.dSetVertexColor = f.check.CheckedTexture.SetVertexColor
-		setCheckColor(f.check.CheckedTexture, r)
-		hooksecurefunc(f.check.CheckedTexture, "SetVertexColor", setCheckColor)
-		f.icon:SetPoint("LEFT", 36, 0)
-		f.title:SetFontObject("ElvUIFontNormal")
-		S:HandleButton(f.loadButton)
-		f.isSkinned = true
-	end
-end
-
-
 listFrame:HookScript("OnShow", function(self)
 	self:StripTextures()
 	self:SetTemplate("Transparent")
@@ -41,15 +18,70 @@ listFrame:HookScript("OnShow", function(self)
 	self.filterBtn:SetHeight(20)
 	self.filterBtn:ddSetDisplayMode("ElvUI")
 	self.profileBtn:SetHeight(20)
-	self.profileBtn:SetPoint("TOPRIGHT", -6, -33)
+	self.profileBtn:Point("TOPRIGHT", -6, -33)
 	self.profileBtn:ddSetDisplayMode("ElvUI")
 	S:HandleTrimScrollBar(self.inset.scrollBar)
 	S:HandleButton(self.enableAll)
 	S:HandleButton(self.disableAll)
-	self.disableAll:SetPoint("LEFT", self.enableAll, "RIGHT", 4, 0)
+	self.disableAll:Point("LEFT", self.enableAll, "RIGHT", 4, 0)
 	S:HandleButton(self.cancel)
-	self.cancel:SetPoint("BOTTOMRIGHT", -20, self.isMainline and 4 or 6)
+	self.cancel:Point("BOTTOMRIGHT", -20, self.isMainline and 4 or 6)
 	S:HandleButton(self.okay)
-	self.okay:SetPoint("RIGHT", self.cancel, "LEFT", -4, 0)
-	hooksecurefunc(self, "normalInit", btnInit)
+	self.okay:Point("RIGHT", self.cancel, "LEFT", -4, 0)
+end)
+
+
+local function setCheckColor(t, r)
+	if r == 1 and not t:IsDesaturated() then
+		t:dSetVertexColor(1, .8, .1)
+	end
+end
+
+
+hooksecurefunc(listFrame, "normalInit", function(self, f)
+	if f.isSkinned then return end
+	local r, g, b = f.check.CheckedTexture:GetVertexColor()
+	S:HandleCheckBox(f.check)
+	f.check.CheckedTexture:SetVertexColor(r, g, b)
+	f.check.CheckedTexture.dSetVertexColor = f.check.CheckedTexture.SetVertexColor
+	setCheckColor(f.check.CheckedTexture, r)
+	hooksecurefunc(f.check.CheckedTexture, "SetVertexColor", setCheckColor)
+	f.icon:Point("LEFT", 36, 0)
+	f.title:SetFontObject("ElvUIFontNormal")
+	S:HandleButton(f.loadButton)
+	f.isSkinned = true
+end)
+
+
+local function toggleSetTexture(t, v)
+	if v == 1 then
+		t:SetSize(8, 4)
+	else
+		t:dSetColorTexture(1, .8, 0)
+		t:SetSize(10, 10)
+		t:ClearAllPoints()
+		t:Point("CENTER", t:GetParent().bg)
+	end
+end
+
+
+hooksecurefunc(listFrame, "categoryInit", function(self, f)
+	if f.isSkinned then return end
+	f.normalTexture:SetTexture()
+	f:SetTemplate("Transparent")
+	f.highlight:SetTexture("Interface/QuestFrame/UI-QuestTitleHighlight")
+	f.highlight:SetDesaturated()
+	f.highlight:Point("TOPLEFT", 2, -2)
+	f.highlight:Point("BOTTOMRIGHT", -2, 2)
+	f.icon:Point("LEFT", 5, -1)
+	f.title:Point("LEFT", 50, 1)
+	f.title:Point("RIGHT", -50, 1)
+	f.toggleBtn:StripTextures()
+	f.toggleBtn:CreateBackdrop(nil, nil, nil, nil, nil, nil, nil, nil, f.toggleBtn:GetFrameLevel())
+	f.toggleBtn.backdrop:SetInside(nil, 1, 1)
+	f.toggleBtn:Point("LEFT", 33, 0)
+	f.toggleBtn.check.dSetColorTexture = f.toggleBtn.check.SetColorTexture
+	hooksecurefunc(f.toggleBtn.check, "SetAtlas", toggleSetTexture)
+	hooksecurefunc(f.toggleBtn.check, "SetColorTexture", toggleSetTexture)
+	f.isSkinned = true
 end)
