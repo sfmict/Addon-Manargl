@@ -4,6 +4,18 @@ local listFrame = AddonMgrAddonList
 
 
 listFrame:HookScript("OnShow", function(self)
+	local OnAccept = function(popup, cb)
+		local editBox = popup.editBox or popup.EditBox
+		local text = editBox:GetText()
+		if text and text ~= "" then cb(popup, text) end
+	end
+	local EditBoxOnEnterPressed = function(self)
+		StaticPopup_OnClick(self:GetParent(), 1)
+	end
+	local EditBoxOnEscapePressed = function(self)
+		self:GetParent():Hide()
+	end
+
 	StaticPopupDialogs[self.addonName.."ADD_TAG"] = {
 		text = addon..": "..L["Add tag"],
 		button1 = ACCEPT,
@@ -13,21 +25,26 @@ listFrame:HookScript("OnShow", function(self)
 		editBoxWidth = 200,
 		hideOnEscape = 1,
 		whileDead = 1,
-		OnAccept = function(popup, cb)
-			local editBox = popup.editBox or popup.EditBox
-			local text = editBox:GetText()
-			if text and text ~= "" then cb(popup, text) end
-		end,
-		EditBoxOnEnterPressed = function(self)
-			StaticPopup_OnClick(self:GetParent(), 1)
-		end,
-		EditBoxOnEscapePressed = function(self)
-			self:GetParent():Hide()
-		end,
+		OnAccept = OnAccept,
+		EditBoxOnEnterPressed = EditBoxOnEnterPressed,
+		EditBoxOnEscapePressed = EditBoxOnEscapePressed,
 		OnShow = function(self)
 			local editBox = self.editBox or self.EditBox
 			editBox:SetFocus()
 		end,
+	}
+	StaticPopupDialogs[self.addonName.."EDIT_TAG"] = {
+		text = addon..": "..EDIT,
+		button1 = ACCEPT,
+		button2 = CANCEL,
+		hasEditBox = 1,
+		maxLetters = 48,
+		editBoxWidth = 350,
+		hideOnEscape = 1,
+		whileDead = 1,
+		OnAccept = OnAccept,
+		EditBoxOnEnterPressed = EditBoxOnEnterPressed,
+		EditBoxOnEscapePressed = EditBoxOnEscapePressed,
 	}
 	StaticPopupDialogs[self.addonName.."TAG_EXISTS"] = {
 		text = addon..": "..L["Tag already exists."],
@@ -131,6 +148,18 @@ listFrame:HookScript("OnShow", function(self)
 				end
 				local checked = function(btn) return self.tagsFilter[btn.value] end
 				local remove = function(btn) self:deleteTag(btn.value) end
+				local widgets = {
+					{
+						icon = [[Interface\WorldMap\GEAR_64GREY]],
+						OnClick = function(btn)
+							self:editTag(btn.value)
+							dd:ddCloseMenus()
+						end,
+						OnTooltipShow = function(_, tooltip)
+							tooltip:SetText(EDIT)
+						end,
+					}
+				}
 
 				for i = 1, #self.tags do
 					local tag = self.tags[i]
@@ -142,6 +171,7 @@ listFrame:HookScript("OnShow", function(self)
 						func = func,
 						checked = checked,
 						remove = remove,
+						widgets = widgets,
 					}
 				end
 				info.list = list
@@ -256,6 +286,37 @@ function listFrame:addTag(name)
 		self.tagsFilter[text] = true
 		if name then self:setAddonTag(name, text) end
 	end)
+end
+
+
+function listFrame:editTag(tag)
+	local dialog = StaticPopup_Show(self.addonName.."EDIT_TAG", nil, nil, function(popup, text)
+		if text == tag then return end
+		for i, tag in ipairs(self.tags) do
+			if tag == text then
+				popup:Hide()
+				StaticPopup_Show(self.addonName.."TAG_EXISTS")
+				return
+			end
+		end
+		tDeleteItem(self.tags, tag)
+		tinsert(self.tags, text)
+		sort(self.tags)
+		self.tagsFilter[text] = self.tagsFilter[tag]
+		self.tagsFilter[tag] = nil
+		self.catCollapsed[text] = self.catCollapsed[tag]
+		self.catCollapsed[tag] = nil
+		for _, tags in next, self.addonTags do
+			tags[text] = tags[tag]
+			tags[tag] = nil
+		end
+		self:setCategories()
+	end)
+	if dialog then
+		local editBox = dialog.editBox or dialog.EditBox
+		editBox:SetText(tag)
+		editBox:HighlightText()
+	end
 end
 
 

@@ -1085,12 +1085,12 @@ function listFrame:categoryInit(f, node)
 	f.toggleBtn.check:ClearAllPoints()
 	if n == len then
 		f.checked = 1
-		f.toggleBtn.check:SetAtlas("common-dropdown-icon-checkmark-yellow", true)
 		f.toggleBtn.check:SetPoint("LEFT", f.toggleBtn.bg)
+		f.toggleBtn.check:SetAtlas("common-dropdown-icon-checkmark-yellow", true)
 	elseif n > 0 then
-		f.toggleBtn.check:SetColorTexture(1, .8, 0)
 		f.toggleBtn.check:SetSize(8, 8)
 		f.toggleBtn.check:SetPoint("CENTER", f.toggleBtn.bg)
+		f.toggleBtn.check:SetColorTexture(1, .8, 0)
 		f.checked = 2
 	else
 		f.toggleBtn.check:SetTexture()

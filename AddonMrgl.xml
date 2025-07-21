@@ -222,6 +222,8 @@
 								<Anchor point="CENTER"/>
 							</Anchors>
 						</Texture>
+					</Layer>
+					<Layer level="OVERLAY">
 						<Texture parentKey="check"/>
 					</Layer>
 				</Layers>

@@ -162,7 +162,11 @@ listFrame:HookScript("OnShow", function(self)
 
 		info.keepShownOnClick = nil
 		info.isTitle = nil
-		info.text = L["Delete tag"]
+		info.text = EDIT
+		info.func = function() self:editTag(name) end
+		dd:ddAddButton(info, level)
+
+		info.text = DELETE
 		info.func = function() self:deleteTag(name) end
 		dd:ddAddButton(info, level)
 
