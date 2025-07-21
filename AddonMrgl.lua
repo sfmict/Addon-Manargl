@@ -72,6 +72,12 @@ function listFrame:ADDON_LOADED(addonName)
 		end
 	end
 
+	for name in next, self.locked do
+		if indexByName[name] == nil then
+			self.locked[name] = nil
+		end
+	end
+
 	function self:ADDON_LOADED(addonName)
 		if self.dataProvider and self:IsShown() and self:isAddonShown(addonName) then
 			UpdateAddOnMemoryUsage()

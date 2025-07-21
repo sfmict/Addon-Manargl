@@ -26,7 +26,7 @@ listFrame:HookScript("OnShow", function(self)
 			info.isNotRadio = true
 			info.text = L["Lock addon"]
 			info.func = function(_,_,_, checked)
-				self.locked[name] = checked
+				self.locked[name] = checked or nil
 				local button = self.scrollBox:FindFrameByPredicate(function(btn, node)
 					return node:GetData().name == name
 				end)
@@ -247,7 +247,7 @@ do
 		local parent = btn:GetParent()
 		if button == "LeftButton" then
 			if IsAltKeyDown() then
-				listFrame.locked[parent.name] = not listFrame.locked[parent.name]
+				listFrame.locked[parent.name] = not listFrame.locked[parent.name] or nil
 				listFrame:normalInit(parent, parent:GetElementData())
 			else
 				if listFrame.locked[parent.name] then return end
