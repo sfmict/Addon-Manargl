@@ -1027,6 +1027,7 @@ function listFrame:normalInit(f, node)
 		f.lock:Hide()
 		f.check:Show()
 		f.check:SetChecked(enabled)
+		f.check.tooltip = nil
 		if enabled then
 			if checkboxState ~= Enum.AddOnEnableState.All then
 				if charEnabled then
@@ -1039,7 +1040,6 @@ function listFrame:normalInit(f, node)
 					f.check.CheckedTexture:SetVertexColor(1,1,1)
 				end
 			else
-				f.check.tooltip = nil
 				f.check.CheckedTexture:SetDesaturated(false)
 				f.check.CheckedTexture:SetVertexColor(1,1,1)
 			end

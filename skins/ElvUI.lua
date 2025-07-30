@@ -55,10 +55,10 @@ end)
 
 local function toggleSetTexture(t, v)
 	if v == 1 then
-		t:SetSize(8, 4)
+		t:Size(12, 6)
 	else
 		t:dSetColorTexture(1, .8, 0)
-		t:SetSize(10, 10)
+		t:Size(12, 12)
 		t:ClearAllPoints()
 		t:Point("CENTER", t:GetParent().bg)
 	end
