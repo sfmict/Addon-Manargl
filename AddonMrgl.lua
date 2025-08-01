@@ -1083,7 +1083,7 @@ function listFrame:categoryInit(f, node)
 	local len = #data.category
 	local n = 0
 	for i = 1, len do
-		if C_AddOns.GetAddOnEnableState(data.category[i], self.addonCharacter) == 2 then
+		if C_AddOns.GetAddOnEnableState(data.category[i], self.addonCharacter) == Enum.AddOnEnableState.All then
 			n = n + 1
 		end
 	end

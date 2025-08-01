@@ -68,6 +68,7 @@ end
 hooksecurefunc(listFrame, "categoryInit", function(self, f)
 	if f.isSkinned then return end
 	f.normalTexture:SetTexture()
+	f.pushedTexture:SetTexture()
 	f:SetTemplate("Transparent")
 	f.highlight:SetTexture("Interface/QuestFrame/UI-QuestTitleHighlight")
 	f.highlight:SetDesaturated()
