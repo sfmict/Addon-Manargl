@@ -618,7 +618,7 @@ function listFrame:setCatCollapsed(name, collapsed)
 end
 
 
-function listFrame:isCatCollapsed(name, collapsed)
+function listFrame:isCatCollapsed(name)
 	return self.catCollapsed[name] and self.notSearched
 end
 

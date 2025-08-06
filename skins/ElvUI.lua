@@ -84,5 +84,9 @@ hooksecurefunc(listFrame, "categoryInit", function(self, f)
 	f.toggleBtn.check.dSetColorTexture = f.toggleBtn.check.SetColorTexture
 	hooksecurefunc(f.toggleBtn.check, "SetAtlas", toggleSetTexture)
 	hooksecurefunc(f.toggleBtn.check, "SetColorTexture", toggleSetTexture)
+	if f.checked then
+		f.toggleBtn.check:dSetColorTexture(1, .8, 0)
+		toggleSetTexture(f.toggleBtn.check, f.checked == 2 and 1)
+	end
 	f.isSkinned = true
 end)
