@@ -114,7 +114,7 @@ local function requireLoadProfile(profile, context)
 	if context[profile] then return end
 	context[profile] = true
 	for addonName in next, profile.addons do
-		local loadable, reason = C_AddOns.IsAddOnLoadable(addonName, listFrame.charName)
+		local loadable, reason = C_AddOns.IsAddOnLoadable(addonName, listFrame.charGUID)
 		if reason == "DISABLED" then return true end
 	end
 	if profile.loadProfiles then

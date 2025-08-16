@@ -13,7 +13,7 @@ listFrame:HookScript("OnShow", function(self)
 		local info = {}
 
 		if level == 1 then
-			local checked = C_AddOns.GetAddOnEnableState(name, self.charName) > Enum.AddOnEnableState.None
+			local checked = C_AddOns.GetAddOnEnableState(name, self.charGUID) > Enum.AddOnEnableState.None
 
 			info.keepShownOnClick = true
 			info.notCheckable = true

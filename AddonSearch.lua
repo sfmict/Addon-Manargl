@@ -8,7 +8,7 @@ listFrame:HookScript("OnShow", function(self)
 
 	local function stop(guiltyAddon)
 		for name, enabled in next, self.db.searchAddon.initialList do
-			self:enableAddon(name, enabled, self.charName)
+			self:enableAddon(name, enabled, self.charGUID)
 		end
 		if guiltyAddon then self:enableAddon(guiltyAddon, false, false) end
 		self.db.searchAddon = nil
@@ -106,7 +106,7 @@ function listFrame:startSearch()
 
 		for i = 1, #self.sorted do
 			local name = self.sorted[i]
-			local loadable, reason = C_AddOns.IsAddOnLoadable(name, self.charName)
+			local loadable, reason = C_AddOns.IsAddOnLoadable(name, self.charGUID)
 			initialList[name] = reason ~= "DISABLED"
 			if name ~= addon and (loadable or reason == "DEMAND_LOADED" or reason == "DEP_DEMAND_LOADED") then
 				loadedList[#loadedList + 1] = name
@@ -151,17 +151,17 @@ function listFrame:listSifting(list)
 	local actualList = {}
 	local enabled = {}
 	local disabled = {}
-	self:setAddonsEnabled(false, self.charName)
-	self:enableAddon(addon, true, self.charName)
+	self:setAddonsEnabled(false, self.charGUID)
+	self:enableAddon(addon, true, self.charGUID)
 
 	for i, name in ipairs(self.db.searchAddon.justified) do
-		self:enableAddon(name, true, self.charName)
+		self:enableAddon(name, true, self.charGUID)
 	end
 
 	for i, name in ipairs(list) do
 		if childByPName[name] then
 			enabled[#enabled + 1] = name
-			self:enableAddon(name, true, self.charName)
+			self:enableAddon(name, true, self.charGUID)
 		elseif hasParentByName[name] then
 			disabled[#disabled + 1] = name
 		else
@@ -173,7 +173,7 @@ function listFrame:listSifting(list)
 
 	for i, name in ipairs(actualList) do
 		if i <= half then
-			self:enableAddon(name, true, self.charName)
+			self:enableAddon(name, true, self.charGUID)
 			enabled[#enabled + 1] = name
 		else
 			disabled[#disabled + 1] = name

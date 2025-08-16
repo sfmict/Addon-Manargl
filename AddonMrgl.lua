@@ -56,7 +56,8 @@ function listFrame:ADDON_LOADED(addonName)
 	self.addonTags = self.db.addonTags
 	self.catCollapsed = self.db.catCollapsed
 
-	self.charName = UnitName("player")
+	self.charName = UnitNameUnmodified("player")
+	self.charGUID = UnitGUID("player")
 	self.sorted = {}
 	local indexByName = {}
 
@@ -455,7 +456,7 @@ end
 
 
 function listFrame:setAddonCharacter()
-	self.addonCharacter = self.config.usePlayer and self.charName or nil
+	self.addonCharacter = self.config.usePlayer and self.charGUID or nil
 end
 
 
@@ -826,7 +827,7 @@ function listFrame:getAddonDepsString(name)
 	if #deps == 0 then return "" end
 	for i = 1, #deps do
 		local dName = deps[i]
-		local loadable, reason = C_AddOns.IsAddOnLoadable(dName, self.charName)
+		local loadable, reason = C_AddOns.IsAddOnLoadable(dName, self.charGUID)
 		local color = HIGHLIGHT_FONT_COLOR
 		if reason == "MISSING" then
 			color = RED_FONT_COLOR
@@ -925,7 +926,7 @@ end
 
 function listFrame:hasAnyChanges()
 	for i = 1, C_AddOns.GetNumAddOns() do
-		local loadable, reason = C_AddOns.IsAddOnLoadable(i, self.charName)
+		local loadable, reason = C_AddOns.IsAddOnLoadable(i, self.charGUID)
 		if reason ~= "DEMAND_LOADED" and reason ~= "DEP_DEMAND_LOADED" and loadable ~= C_AddOns.IsAddOnLoaded(i) then
 			return true
 		end
@@ -989,7 +990,7 @@ function listFrame:normalInit(f, node)
 	end
 	f.select:SetShown(self.selProfileAddons and self.selProfileAddons[name])
 
-	local loadable, reason = C_AddOns.IsAddOnLoadable(name, self.charName)
+	local loadable, reason = C_AddOns.IsAddOnLoadable(name, self.charGUID)
 	local checkboxState = C_AddOns.GetAddOnEnableState(name, self.addonCharacter)
 	local enabled = checkboxState > Enum.AddOnEnableState.None
 	local charEnabled = reason ~= "DISABLED"
