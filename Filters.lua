@@ -158,7 +158,20 @@ listFrame:HookScript("OnShow", function(self)
 						OnTooltipShow = function(_, tooltip)
 							tooltip:SetText(EDIT)
 						end,
-					}
+					},
+					{
+						icon = "interface/worldmap/worldmappartyicon",
+						OnClick = function(btn)
+							PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+							self.noTagFilter = false
+							self.withAllTagsFilter = false
+							self:setAllTagFilter(false)
+							self.tagsFilter[btn.value] = true
+							self:updateFilters()
+							dd:ddRefresh(level)
+							self:updateFilters()
+						end,
+					},
 				}
 
 				for i = 1, #self.tags do
@@ -174,6 +187,7 @@ listFrame:HookScript("OnShow", function(self)
 						widgets = widgets,
 					}
 				end
+				info.listMaxSize = 30
 				info.list = list
 				dd:ddAddButton(info, level)
 				info.list = nil
@@ -207,20 +221,38 @@ listFrame:HookScript("OnShow", function(self)
 			end
 			dd:ddAddButton(info, level)
 
-			info.notCheckable = nil
-
-			info.func = function(btn, _,_, checked)
+			local list = {}
+			local func = function(btn, _,_, checked)
 				self.categoriesFilter[btn.value] = checked
 				self:updateFilters()
 			end
-			info.checked = function(btn) return self.categoriesFilter[btn.value] end
+			local checked = function(btn) return self.categoriesFilter[btn.value] end
+			local widgets = {{
+				icon = "interface/worldmap/worldmappartyicon",
+				OnClick = function(btn)
+					PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+					self:setAllCategoryfilters(false)
+					self.categoriesFilter[btn.value] = true
+					dd:ddRefresh(level)
+					self:updateFilters()
+				end,
+			}}
 
 			for i = 1, #self.categoriesFilter do
 				local text = self.categoriesFilter[i]
-				info.text =	text == "rest" and L["Rest"] or text
-				info.value = text
-				dd:ddAddButton(info, level)
+				list[i] = {
+					keepShownOnClick = true,
+					isNotRadio = true,
+					text = text == "rest" and L["Rest"] or text,
+					value = text,
+					func = func,
+					checked = checked,
+					widgets = widgets,
+				}
 			end
+			info.listMaxSize = 30
+			info.list = list
+			dd:ddAddButton(info, level)
 		end
 	end)
 end)
