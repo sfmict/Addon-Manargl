@@ -670,14 +670,21 @@ do
 	local function addMaxParents(self, filtred, name, pList)
 		if self.circular[name] then return end
 		local deps = self.depsByName[name]
-		if deps ~= nil then
-			for i = 1, #deps do
-				local dName = deps[i]
-				if filtred[dName] then addMaxParents(self, filtred, dName, pList) end
-			end
-		else
+		if deps == nil then
 			pList[name] = true
+			return true
 		end
+		local added = false
+		for i = 1, #deps do
+			local dName = deps[i]
+			if filtred[dName] then
+				added = true
+				if not addMaxParents(self, filtred, dName, pList) then
+					pList[dName] = true
+				end
+			end
+		end
+		return added
 	end
 
 	function listFrame:setChildByDeps(filtred, hasParentByName, childByPName)
@@ -685,19 +692,19 @@ do
 			local name = filtred[i]
 			local deps = self.depsByName[name]
 			if deps ~= nil then
+				local pList = {}
 				for j = 1, #deps do
 					local dName = deps[j]
-					if filtred[dName] then
-						local pList = {}
-						addMaxParents(self, filtred, dName, pList)
-						if next(pList) then
-							hasParentByName[name] = true
-							for pName in next, pList do
-								local childs = childByPName[pName]
-								if childs then tInsertUnique(childs, name)
-								else childByPName[pName] = {name} end
-							end
-						end
+					if filtred[dName] and not addMaxParents(self, filtred, dName, pList) then
+						pList[dName] = true
+					end
+				end
+				if next(pList) then
+					hasParentByName[name] = true
+					for pName in next, pList do
+						local childs = childByPName[pName]
+						if childs then childs[#childs + 1] = name
+						else childByPName[pName] = {name} end
 					end
 				end
 			end
@@ -1020,7 +1027,15 @@ function listFrame:normalInit(f, node)
 		f.lock:Show()
 		f.check:Hide()
 		if enabled then
-			f.lock:SetVertexColor(1, .78, 0)
+			if checkboxState ~= Enum.AddOnEnableState.All then
+				if charEnabled then
+					f.lock:SetVertexColor(0, 1, 0)
+				else
+					f.lock:SetVertexColor(1, 1, 1)
+				end
+			else
+				f.lock:SetVertexColor(1, .78, 0)
+			end
 		else
 			f.lock:SetVertexColor(1, 1, 1)
 		end

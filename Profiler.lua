@@ -84,8 +84,7 @@ end
 
 
 function listFrame:updateAddonMetrics(f)
-	local name = f.name
-	local str = ""
+	local name, str = f.name
 	if self:isProfilerEnabled() then
 		str = self.currentStr:format(self:getAddonMetricPercent(name, self.enumRecentAverageTime))
 		if self.config.cpuSortBy == "average" then
