@@ -10,7 +10,7 @@ listFrame:HookScript("OnShow", function(self)
 		for name, enabled in next, self.db.searchAddon.initialList do
 			self:enableAddon(name, enabled, self.charGUID)
 		end
-		if guiltyAddon then self:enableAddon(guiltyAddon, false, false) end
+		if guiltyAddon then self:enableAddon(guiltyAddon, false, self.charGUID) end
 		self.db.searchAddon = nil
 		ReloadUI()
 	end

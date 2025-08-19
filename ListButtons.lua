@@ -214,7 +214,7 @@ end
 
 
 function AddonMgrListCategoryMixin:onClick(button)
-	if button == "LeftButton" then
+	if button == "LeftButton" or button == "MiddleButton" then
 		local collapsed = self:GetElementData():ToggleCollapsed(TreeDataProviderConstants.RetainChildCollapse, TreeDataProviderConstants.DoInvalidation)
 		listFrame:setCatCollapsed(self:GetData().name, collapsed)
 		self:updateState()

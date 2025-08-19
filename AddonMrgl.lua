@@ -420,6 +420,7 @@ listFrame:SetScript("OnShow", function(self)
 	self:updatePerformance()
 	self:setAddonCharacter()
 	self:updateCpuButtons()
+	self:updateReloadButton()
 	UpdateAddOnMemoryUsage()
 	self.uTimer = .1
 	self.syncCounter = 0
@@ -670,21 +671,18 @@ do
 	local function addMaxParents(self, filtred, name, pList)
 		if self.circular[name] then return end
 		local deps = self.depsByName[name]
-		if deps == nil then
-			pList[name] = true
-			return true
-		end
-		local added = false
-		for i = 1, #deps do
-			local dName = deps[i]
-			if filtred[dName] then
-				added = true
-				if not addMaxParents(self, filtred, dName, pList) then
-					pList[dName] = true
+		if deps ~= nil then
+			local added = false
+			for i = 1, #deps do
+				local dName = deps[i]
+				if filtred[dName] then
+					added = true
+					addMaxParents(self, filtred, dName, pList)
 				end
 			end
+			if added then return end
 		end
-		return added
+		pList[name] = true
 	end
 
 	function listFrame:setChildByDeps(filtred, hasParentByName, childByPName)
@@ -695,9 +693,7 @@ do
 				local pList = {}
 				for j = 1, #deps do
 					local dName = deps[j]
-					if filtred[dName] and not addMaxParents(self, filtred, dName, pList) then
-						pList[dName] = true
-					end
+					if filtred[dName] then addMaxParents(self, filtred, dName, pList) end
 				end
 				if next(pList) then
 					hasParentByName[name] = true
@@ -772,14 +768,11 @@ function listFrame:setChildByGroup(filtred, hasParentByName, childByPName)
 	for i = 1, #filtred do
 		local name = filtred[i]
 		local gName = C_AddOns.GetAddOnMetadata(name, "Group")
-
-		if gName and name ~= gName then
-			if filtred[gName] then
-				hasParentByName[name] = true
-				local childs = childByPName[gName]
-				if childs then childs[#childs + 1] = name
-				else childByPName[gName] = {name} end
-			end
+		if filtred[gName] and name ~= gName then
+			hasParentByName[name] = true
+			local childs = childByPName[gName]
+			if childs then childs[#childs + 1] = name
+			else childByPName[gName] = {name} end
 		end
 	end
 end
