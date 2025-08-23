@@ -114,6 +114,52 @@ listFrame:HookScript("OnShow", function(self)
 			dd:ddAddButton(info, level)
 
 		elseif value == "tags" then
+			if #self.tags > 0 then
+				local list = {}
+				local func = function(btn, _,_, checked)
+					if checked then
+						self:setAddonTag(name, btn.text)
+					else
+						self:removeAddonTag(name, btn.text, true)
+					end
+					dd:ddRefresh(level)
+				end
+				local checked = function(btn)
+					if self:hasAddonTag(name, btn.text) then return 1 end
+					for i = 1, #self.tags do
+						local tag = self.tags[i]
+						local pTag, sTag = self:getPSFromTag(tag)
+						if sTag and pTag == btn.text and self:hasAddonTag(name, tag) then return 2 end
+					end
+				end
+
+				for i = 1, #self.tags do
+					local pTag, sTag = self:getPSFromTag(self.tags[i])
+					if sTag == nil then
+						list[#list + 1] = {
+							keepShownOnClick = true,
+							isNotRadio = true,
+							hasArrow = true,
+							text = pTag,
+							value = " "..pTag,
+							func = func,
+							checked = checked,
+						}
+					end
+				end
+
+				info.list = list
+				dd:ddAddButton(info, level)
+				info.list = nil
+				dd:ddAddSeparator(level)
+			end
+
+			info.notCheckable = true
+			info.text = L["Add tag"]
+			info.func = function() self:addTag(nil, name) end
+			dd:ddAddButton(info, level)
+		else
+			local parentTag = value:sub(2)
 			local list = {}
 
 			local func = function(btn, _,_, checked)
@@ -122,52 +168,56 @@ listFrame:HookScript("OnShow", function(self)
 				else
 					self:removeAddonTag(name, btn.value, true)
 				end
+				dd:ddRefresh(level - 1)
 			end
 
-			for i, tag in ipairs(self.tags) do
-				list[i] = {
-					keepShownOnClick = true,
-					isNotRadio = true,
-					text = tag,
-					value = tag,
-					func = func,
-					checked = self:hasAddonTag(name, tag),
-				}
+			for i = 1, #self.tags do
+				local tag = self.tags[i]
+				local pTag, sTag = self:getPSFromTag(tag)
+				if sTag and pTag == parentTag then
+					list[#list + 1] = {
+						keepShownOnClick = true,
+						isNotRadio = true,
+						text = sTag,
+						value = tag,
+						func = func,
+						checked = self:hasAddonTag(name, tag),
+					}
+				end
 			end
 
-			info.list = list
-			dd:ddAddButton(info, level)
-			info.list = nil
-
-			if #self.tags > 0 then
+			if #list > 0 then
+				info.list = list
+				dd:ddAddButton(info, level)
+				info.list = nil
 				dd:ddAddSeparator(level)
 			end
 
 			info.notCheckable = true
-			info.text = L["Add tag"]
-			info.func = function() self:addTag(name) end
+			info.text = L["Add subtag"]
+			info.func = function() self:addTag(parentTag, name) end
 			dd:ddAddButton(info, level)
 		end
 	end
 
 	self.tagCategoryContextMenu = function(dd, level)
 		local info = {}
-		local name = self.contextMenuData.name
+		local tag = self.contextMenuData.key
 
 		info.notCheckable = true
 		info.keepShownOnClick = true
 		info.isTitle = true
-		info.text = name
+		info.text = self.contextMenuData.name
 		dd:ddAddButton(info, level)
 
 		info.keepShownOnClick = nil
 		info.isTitle = nil
 		info.text = EDIT
-		info.func = function() self:editTag(name) end
+		info.func = function() self:editTag(tag) end
 		dd:ddAddButton(info, level)
 
 		info.text = DELETE
-		info.func = function() self:deleteTag(name) end
+		info.func = function() self:deleteTag(tag) end
 		dd:ddAddButton(info, level)
 
 		info.func = nil
@@ -188,10 +238,21 @@ AddonMgrListCategoryMixin = {}
 do
 	local function toggleOnClick(btn)
 		local parent = btn:GetParent()
-		local category = parent:GetData().category
-		for i = 1, #category do
-			listFrame:enableAddon(category[i], parent.checked ~= 1)
+		local cat = parent:GetData().category
+		local enabled = parent.checked ~= 1
+
+		for i = 1, #cat do
+			listFrame:enableAddon(cat[i], enabled)
 		end
+
+		if cat.categories then
+			for _, sCat in next, cat.categories do
+				for j = 1, #sCat do
+					listFrame:enableAddon(sCat[j], enabled)
+				end
+			end
+		end
+
 		listFrame:updateList()
 		listFrame:updateReloadButton()
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
@@ -215,8 +276,9 @@ end
 
 function AddonMgrListCategoryMixin:onClick(button)
 	if button == "LeftButton" or button == "MiddleButton" then
-		local collapsed = self:GetElementData():ToggleCollapsed(TreeDataProviderConstants.RetainChildCollapse, TreeDataProviderConstants.DoInvalidation)
-		listFrame:setCatCollapsed(self:GetData().name, collapsed)
+		local node = self:GetElementData()
+		local collapsed = node:ToggleCollapsed(TreeDataProviderConstants.RetainChildCollapse, TreeDataProviderConstants.DoInvalidation)
+		listFrame:setCatCollapsed(node, collapsed)
 		self:updateState()
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 	elseif listFrame.config.catGroup == "tag" then
@@ -318,7 +380,7 @@ AddonMgrListParentMixin = {}
 function AddonMgrListParentMixin:onClick()
 	local node = self:GetParent():GetElementData()
 	local collapsed = node:ToggleCollapsed(TreeDataProviderConstants.RetainChildCollapse, TreeDataProviderConstants.DoInvalidation)
-	listFrame:setGroupCollapsed(node:GetData().name, collapsed)
+	listFrame:setGroupCollapsed(node, collapsed)
 	self:updateState()
 	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 end

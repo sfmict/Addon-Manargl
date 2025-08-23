@@ -196,7 +196,7 @@
 			<Layer level="OVERLAY" textureSubLevel="2">
 				<Texture parentKey="icon" atlas="glues-characterselect-icon-minus" useAtlasSize="true">
 					<Anchors>
-						<Anchor point="LEFT" x="5" y="1"/>
+						<Anchor point="RIGHT" x="-6" y="1"/>
 					</Anchors>
 				</Texture>
 				<FontString inherits="GameFontNormal" justifyH="CENTER" parentKey="title" wordwrap="false">
@@ -213,7 +213,7 @@
 			<Button parentKey="toggleBtn" alpha=".7" propagateMouseInput="Motion">
 				<Size x="16" y="16"/>
 				<Anchors>
-					<Anchor point="LEFT" x="33" y="1"/>
+					<Anchor point="LEFT" x="13" y="1"/>
 				</Anchors>
 				<Layers>
 					<Layer level="BACKGROUND">

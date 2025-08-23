@@ -67,9 +67,12 @@ function listFrame:ADDON_LOADED(addonName)
 		indexByName[name] = i
 	end
 
-	for name in next, self.depCollapsed do
-		if indexByName[name] == nil then
-			self.depCollapsed[name] = nil
+	for k in next, self.depCollapsed do
+		for name in k:gmatch("[^\n]+") do
+			if indexByName[name] == nil then
+				self.depCollapsed[k] = nil
+				break
+			end
 		end
 	end
 
@@ -227,6 +230,22 @@ listFrame:SetScript("OnShow", function(self)
 	sort(self.categoriesFilter)
 	self.categoriesFilter[#self.categoriesFilter + 1] = "rest"
 	self.categoriesFilter["rest"] = true
+
+	-- REMOVE NON-EXISTENT COLLAPSE CATEGORIES
+	for cat in next, self.catCollapsed do
+		local exists = self.categoriesFilter[cat]
+		if exists == nil then
+			for i = 1, #self.tags do
+				if cat == self.tags[i] then
+					exists = true
+					break
+				end
+			end
+		end
+		if exists == nil then
+			self.catCollapsed[cat] = nil
+		end
+	end
 
 	-- CIRCULAR
 	local context = {}
@@ -558,12 +577,17 @@ end
 
 
 do
-	local function addToCategory(self, name, category)
+	local function getCategoryList(self, category, catName)
 		local list = self.categories[category]
 		if not list then
-			list = {filtred = {}, hasParentByName = {}, childByPName = {}}
+			list = {name = catName or category, filtred = {}, hasParentByName = {}, childByPName = {}}
 			self.categories[category] = list
 		end
+		return list
+	end
+
+	local function addToCategory(self, name, category, catName)
+		local list = getCategoryList(self, category, catName)
 		list[#list + 1] = name
 	end
 
@@ -592,7 +616,14 @@ do
 					local tags = self.addonTags[name]
 					if tags then
 						for tag in next, tags do
-							addToCategory(self, name, tag)
+							local pTag, sTag = self:getPSFromTag(tag)
+							if sTag == nil then
+								addToCategory(self, name, tag)
+							else
+								local pCat = getCategoryList(self, pTag)
+								if not pCat.categories then pCat.categories = {} end
+								addToCategory(pCat, name, tag, sTag)
+							end
 						end
 					else
 						self.uncategorized[#self.uncategorized + 1] = name
@@ -600,8 +631,13 @@ do
 				end
 			end
 
-			for category, list in next, self.categories do
+			for cat, list in next, self.categories do
 				self:categorySort(list)
+				if list.categories then
+					for sCat, sList in next, list.categories do
+						self:categorySort(sList)
+					end
+				end
 			end
 			self:categorySort(self.uncategorized)
 		else
@@ -615,37 +651,49 @@ do
 end
 
 
-function listFrame:setCatCollapsed(name, collapsed)
-	self.catCollapsed[name] = collapsed or nil
+function listFrame:getCollapsedKey(node)
+	local data = node:GetData()
+	local k = data.name
+	local isCategory = data.isCategory
+	node = node:GetParent()
+	data = node:GetData()
+	while data and data.isCategory == isCategory do
+		k = data.name.."\n"..k
+		node = node:GetParent()
+		data = node:GetData()
+	end
+	return k
 end
 
 
-function listFrame:isCatCollapsed(name)
-	return self.catCollapsed[name] and self.notSearched
+function listFrame:setCatCollapsed(node, collapsed)
+	self.catCollapsed[self:getCollapsedKey(node)] = collapsed or nil
 end
 
 
-function listFrame:setGroupCollapsed(name, collapsed)
-	self.depCollapsed[name] = collapsed or nil
+function listFrame:isCatCollapsed(node)
+	return self.catCollapsed[self:getCollapsedKey(node)] and self.notSearched
 end
 
 
-function listFrame:isGroupCollapsed(name)
-	return self.depCollapsed[name] and self.notSearched
+function listFrame:setGroupCollapsed(node, collapsed)
+	self.depCollapsed[self:getCollapsedKey(node)] = collapsed or nil
+end
+
+
+function listFrame:isGroupCollapsed(node)
+	return self.depCollapsed[self:getCollapsedKey(node)] and self.notSearched
 end
 
 
 function listFrame:setAllCollapsed(collapsed)
-	if self.isCatView then
-		for category, list in next, self.categories do
-			self:setCatCollapsed(category, collapsed)
-			for name in next, list.childByPName do
-				self:setGroupCollapsed(name, collapsed)
+	for i, node in self.dataProvider:Enumerate(nil, nil, false) do
+		if #node:GetNodes() > 0 then
+			if node:GetData().isCategory then
+				self:setCatCollapsed(node, collapsed)
+			else
+				self:setGroupCollapsed(node, collapsed)
 			end
-		end
-	else
-		for name in next, self.childByPName do
-			self:setGroupCollapsed(name, collapsed)
 		end
 	end
 end
@@ -1087,13 +1135,26 @@ end
 
 function listFrame:categoryInit(f, node)
 	local data = node:GetData()
+	local cat = data.category
 	f.title:SetText(data.name)
 
-	local len = #data.category
+	local len = #cat
 	local n = 0
 	for i = 1, len do
-		if C_AddOns.GetAddOnEnableState(data.category[i], self.addonCharacter) == Enum.AddOnEnableState.All then
+		if C_AddOns.GetAddOnEnableState(cat[i], self.addonCharacter) == Enum.AddOnEnableState.All then
 			n = n + 1
+		end
+	end
+
+	if cat.categories then
+		for _, sCat in next, cat.categories do
+			local catLen = #sCat
+			len = len + catLen
+			for j = 1, catLen do
+				if C_AddOns.GetAddOnEnableState(sCat[j], self.addonCharacter) == Enum.AddOnEnableState.All then
+					n = n + 1
+				end
+			end
 		end
 	end
 
@@ -1134,7 +1195,7 @@ do
 			local node = pNode:Insert(data)
 
 			if list then
-				node:SetCollapsed(self:isGroupCollapsed(name))
+				node:SetCollapsed(self:isGroupCollapsed(node))
 				addChilds(self, childByPName, node, list)
 			end
 		end
@@ -1152,8 +1213,28 @@ do
 				local node = pNode:Insert(data)
 
 				if list then
-					node:SetCollapsed(self:isGroupCollapsed(name))
+					node:SetCollapsed(self:isGroupCollapsed(node))
 					addChilds(self, childByPName, node, list)
+				end
+			end
+		end
+	end
+
+	local function addCategories(self, pNode, categories)
+		for i = 1, #self.categoriesList do
+			local catName = self.categoriesList[i]
+			local cat = categories[catName]
+
+			if cat and cat.notEmpty then
+				local cNode = pNode:Insert({name = cat.name, key = catName, category = cat, isCategory = true})
+				cNode:SetCollapsed(self:isCatCollapsed(cNode))
+
+				if #cat.filtred > 0 then
+					addParents(self, cat.hasParentByName, cat.childByPName, cNode, cat.filtred)
+				end
+
+				if cat.categories then
+					addCategories(self, cNode, cat.categories)
 				end
 			end
 		end
@@ -1163,21 +1244,9 @@ do
 		self.dataProvider = CreateTreeDataProvider()
 
 		if self.isCatView then
-			local addDevider = false
-			for i = 1, #self.categoriesList do
-				local catName = self.categoriesList[i]
-				local cat = self.categories[catName]
-
-				if cat and #cat.filtred > 0 then
-					addDevider = true
-					local cNode = self.dataProvider:Insert({name = catName, category = cat, isCategory = true})
-					cNode:SetCollapsed(self:isCatCollapsed(catName))
-					addParents(self, cat.hasParentByName, cat.childByPName, cNode, cat.filtred)
-				end
-			end
-
+			addCategories(self, self.dataProvider, self.categories)
 			if #self.uncategorized.filtred > 0 then
-				if addDevider then self.dataProvider:Insert({}) end
+				if self.hasCategorries then self.dataProvider:Insert({}) end
 				local uncat = self.uncategorized
 				addParents(self, uncat.hasParentByName, uncat.childByPName, self.dataProvider, uncat.filtred)
 			end
@@ -1221,11 +1290,25 @@ end
 function listFrame:updateFilters()
 	local text = self.searchBox:GetText():trim():lower()
 	self.notSearched = #text == 0
+	self.hasCategorries = false
 
 	if self.isCatView then
 		for category, list in next, self.categories do
 			self:setFiltred(text, list, list.filtred)
 			self:setListGroup(list.filtred, list.hasParentByName, list.childByPName)
+			list.notEmpty = #list.filtred > 0
+			if not self.hasCategorries and list.notEmpty then self.hasCategorries = list.notEmpty end
+			if list.categories then
+				for sCategory, sList in next, list.categories do
+					self:setFiltred(text, sList, sList.filtred)
+					self:setListGroup(sList.filtred, sList.hasParentByName, sList.childByPName)
+					sList.notEmpty = #sList.filtred > 0
+					if sList.notEmpty then
+						if not list.notEmpty then list.notEmpty = sList.notEmpty end
+						if not self.hasCategorries then self.hasCategorries = sList.notEmpty end
+					end
+				end
+			end
 		end
 		local uncat = self.uncategorized
 		self:setFiltred(text, uncat, uncat.filtred)

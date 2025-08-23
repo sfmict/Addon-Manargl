@@ -36,6 +36,7 @@ L["tags"] = "Tags"
 L["No tag"] = "No Tag"
 L["With all tags"] = "With All Tags"
 L["Add tag"] = "Add Tag"
+L["Add subtag"] = "Add Subtag"
 -- PROFILES
 L["Profiles"] = "Profiles"
 L["Characters"] = "Characters"
