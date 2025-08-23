@@ -412,35 +412,49 @@ function listFrame:addTag(pTag, name)
 end
 
 
-function listFrame:editTag(tag)
-	local pTag, sTag = self:getPSFromTag(tag)
-	local dialog = StaticPopup_Show(self.addonName.."EDIT_TAG", nil, nil, function(popup, text)
-		if sTag then text = self:getTagFromPS(pTag, text) end
-		if text == tag then return end
-		for i, tag in ipairs(self.tags) do
-			if tag == text then
-				popup:Hide()
-				StaticPopup_Show(self.addonName.."TAG_EXISTS")
-				return
-			end
-		end
-		tDeleteItem(self.tags, tag)
-		tinsert(self.tags, text)
-		sort(self.tags)
-		self.tagsFilter[text] = self.tagsFilter[tag]
-		self.tagsFilter[tag] = nil
-		self.catCollapsed[text] = self.catCollapsed[tag]
-		self.catCollapsed[tag] = nil
+do
+	local function renameTag(self, oldTag, newTag)
+		self.tags[tIndexOf(self.tags, oldTag)] = newTag
+		self.tagsFilter[newTag] = self.tagsFilter[oldTag]
+		self.tagsFilter[oldTag] = nil
+		self.catCollapsed[newTag] = self.catCollapsed[oldTag]
+		self.catCollapsed[oldTag] = nil
 		for _, tags in next, self.addonTags do
-			tags[text] = tags[tag]
-			tags[tag] = nil
+			tags[newTag] = tags[oldTag]
+			tags[oldTag] = nil
 		end
-		self:setCategories()
-	end)
-	if dialog then
-		local editBox = dialog.editBox or dialog.EditBox
-		editBox:SetText(sTag or pTag)
-		editBox:HighlightText()
+	end
+
+	function listFrame:editTag(eTag)
+		local pTag, sTag = self:getPSFromTag(eTag)
+		local dialog = StaticPopup_Show(self.addonName.."EDIT_TAG", nil, nil, function(popup, text)
+			if sTag then text = self:getTagFromPS(pTag, text) end
+			if text == eTag then return end
+			for i, tag in ipairs(self.tags) do
+				if tag == text then
+					popup:Hide()
+					StaticPopup_Show(self.addonName.."TAG_EXISTS")
+					return
+				end
+			end
+			renameTag(self, eTag, text)
+			if sTag == nil then
+				for i = 1, #self.tags do
+					local tag = self.tags[i]
+					local pTag, sTag = self:getPSFromTag(tag)
+					if pTag == eTag then
+						renameTag(self, tag, self:getTagFromPS(text, sTag))
+					end
+				end
+			end
+			sort(self.tags)
+			self:setCategories()
+		end)
+		if dialog then
+			local editBox = dialog.editBox or dialog.EditBox
+			editBox:SetText(sTag or pTag)
+			editBox:HighlightText()
+		end
 	end
 end
 
