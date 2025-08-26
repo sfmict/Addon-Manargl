@@ -126,10 +126,8 @@ listFrame:HookScript("OnShow", function(self)
 				end
 				local checked = function(btn)
 					if self:hasAddonTag(name, btn.text) then return 1 end
-					for i = 1, #self.tags do
-						local tag = self.tags[i]
-						local pTag, sTag = self:getPSFromTag(tag)
-						if sTag and pTag == btn.text and self:hasAddonTag(name, tag) then return 2 end
+					if self:checkSubtags(btn.text, function(tag) return self:hasAddonTag(name, tag) end) then
+						return 2
 					end
 				end
 
@@ -161,14 +159,21 @@ listFrame:HookScript("OnShow", function(self)
 		else
 			local parentTag = value:sub(2)
 			local list = {}
-
-			local func = function(btn, _,_, checked)
+			local func = function(_, tag, _, checked)
 				if checked then
-					self:setAddonTag(name, btn.value)
+					self:setAddonTag(name, tag)
 				else
-					self:removeAddonTag(name, btn.value, true)
+					self:removeAddonTag(name, tag, true)
 				end
-				dd:ddRefresh(level - 1)
+				for i = level - 1, 1, -1 do
+					dd:ddRefresh(i)
+				end
+			end
+			local checked = function(_, tag)
+				if self:hasAddonTag(name, tag) then return 1 end
+				if self:checkSubtags(tag, function(tag) return self:hasAddonTag(name, tag) end) then
+					return 2
+				end
 			end
 
 			for i = 1, #self.tags do
@@ -178,10 +183,12 @@ listFrame:HookScript("OnShow", function(self)
 					list[#list + 1] = {
 						keepShownOnClick = true,
 						isNotRadio = true,
+						hasArrow = self.config.infinitySubtags or self:hasSubtag(tag),
 						text = sTag,
-						value = tag,
+						arg1 = tag,
+						value = " "..tag,
 						func = func,
-						checked = self:hasAddonTag(name, tag),
+						checked = checked,
 					}
 				end
 			end
@@ -190,24 +197,27 @@ listFrame:HookScript("OnShow", function(self)
 				info.list = list
 				dd:ddAddButton(info, level)
 				info.list = nil
-				dd:ddAddSeparator(level)
 			end
 
-			info.notCheckable = true
-			info.text = L["Add subtag"]
-			info.func = function() self:addTag(parentTag, name) end
-			dd:ddAddButton(info, level)
+			if level == 3 or self.config.infinitySubtags then
+				if #list > 0 then dd:ddAddSeparator(level) end
+
+				info.notCheckable = true
+				info.text = L["Add subtag"]
+				info.func = function() self:addTag(parentTag, name) end
+				dd:ddAddButton(info, level)
+			end
 		end
 	end
 
 	self.tagCategoryContextMenu = function(dd, level)
 		local info = {}
-		local tag = self.contextMenuData.key
+		local tag = self.contextMenuData.name
 
 		info.notCheckable = true
 		info.keepShownOnClick = true
 		info.isTitle = true
-		info.text = self.contextMenuData.name
+		info.text = self.contextMenuData.category.sName
 		dd:ddAddButton(info, level)
 
 		info.keepShownOnClick = nil
@@ -236,6 +246,18 @@ AddonMgrListCategoryMixin = {}
 
 
 do
+	local function toggleSubCategories(categories, enabled)
+		for i = 1, #categories do
+			local list = categories[categories[i]]
+			for j = 1, #list do
+				listFrame:enableAddon(list[j], enabled)
+			end
+			if list.categories then
+				toggleSubCategories(list.categories, enabled)
+			end
+		end
+	end
+
 	local function toggleOnClick(btn)
 		local parent = btn:GetParent()
 		local cat = parent:GetData().category
@@ -246,11 +268,7 @@ do
 		end
 
 		if cat.categories then
-			for _, sCat in next, cat.categories do
-				for j = 1, #sCat do
-					listFrame:enableAddon(sCat[j], enabled)
-				end
-			end
+			toggleSubCategories(cat.categories, enabled)
 		end
 
 		listFrame:updateList()
@@ -278,7 +296,7 @@ function AddonMgrListCategoryMixin:onClick(button)
 	if button == "LeftButton" or button == "MiddleButton" then
 		local node = self:GetElementData()
 		local collapsed = node:ToggleCollapsed(TreeDataProviderConstants.RetainChildCollapse, TreeDataProviderConstants.DoInvalidation)
-		listFrame:setCatCollapsed(node, collapsed)
+		listFrame:setCatCollapsed(self:GetData().name, collapsed)
 		self:updateState()
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 	elseif listFrame.config.catGroup == "tag" then

@@ -201,10 +201,8 @@ listFrame:HookScript("OnShow", function(self)
 				end
 				local checked = function(btn)
 					if self.tagsFilter[btn.text] then return 1 end
-					for i = 1, #self.tags do
-						local tag = self.tags[i]
-						local pTag, sTag = self:getPSFromTag(tag)
-						if sTag and pTag == btn.text and self.tagsFilter[tag] then return 2 end
+					if self:checkSubtags(btn.text, function(tag) return self.tagsFilter[tag] end) then
+						return 2
 					end
 				end
 				local remove = function(btn) self:deleteTag(btn.text) end
@@ -268,18 +266,25 @@ listFrame:HookScript("OnShow", function(self)
 		else
 			local parentTag = value:sub(2)
 			local list = {}
-			local func = function(btn, _,_, checked)
-				self.tagsFilter[btn.value] = checked
-				dd:ddRefresh(level - 1)
+			local func = function(_, tag, _, checked)
+				self.tagsFilter[tag] = checked
+				for i = level - 1, 1, -1 do
+					dd:ddRefresh(i)
+				end
 				self:updateFilters()
 			end
-			local checked = function(btn) return self.tagsFilter[btn.value] end
-			local remove = function(btn) self:deleteTag(btn.value) end
+			local checked = function(_, tag)
+				if self.tagsFilter[tag] then return 1 end
+				if self:checkSubtags(tag, function(tag) return self.tagsFilter[tag] end) then
+					return 2
+				end
+			end
+			local remove = function(_, tag) self:deleteTag(tag) end
 			local widgets = {
 				{
 					icon = [[Interface\WorldMap\GEAR_64GREY]],
-					OnClick = function(btn)
-						self:editTag(btn.value)
+					OnClick = function(_, tag)
+						self:editTag(tag)
 						dd:ddCloseMenus()
 					end,
 					OnTooltipShow = function(_, tooltip)
@@ -288,15 +293,17 @@ listFrame:HookScript("OnShow", function(self)
 				},
 				{
 					icon = "interface/worldmap/worldmappartyicon",
-					OnClick = function(btn)
+					OnClick = function(_, tag)
 						PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 						self.noTagFilter = false
 						self.withAllTagsFilter = false
 						self:setAllTagFilter(false)
-						self.tagsFilter[btn.value] = true
+						self.tagsFilter[tag] = true
 						self:updateFilters()
-						dd:ddRefresh(level)
-						dd:ddRefresh(level - 1)
+						for i = level, 1, -1 do
+							dd:ddRefresh(i)
+						end
+						dd:ddRefresh(level + 1)
 						self:updateFilters()
 					end,
 				},
@@ -309,8 +316,10 @@ listFrame:HookScript("OnShow", function(self)
 					list[#list + 1] = {
 						keepShownOnClick = true,
 						isNotRadio = true,
+						hasArrow = self.config.infinitySubtags or self:hasSubtag(tag),
 						text = sTag,
-						value = tag,
+						arg1 = tag,
+						value = " "..tag,
 						func = func,
 						checked = checked,
 						remove = remove,
@@ -324,15 +333,17 @@ listFrame:HookScript("OnShow", function(self)
 				info.list = list
 				dd:ddAddButton(info, level)
 				info.list = nil
-				dd:ddAddSeparator(level)
 			end
 
-			info.keepShownOnClick = nil
-			info.notCheckable = true
+			if level == 3 or self.config.infinitySubtags then
+				if #list > 0 then dd:ddAddSeparator(level) end
 
-			info.text = L["Add subtag"]
-			info.func = function() self:addTag(parentTag) end
-			dd:ddAddButton(info, level)
+				info.keepShownOnClick = nil
+				info.notCheckable = true
+				info.text = L["Add subtag"]
+				info.func = function() self:addTag(parentTag) end
+				dd:ddAddButton(info, level)
+			end
 		end
 	end)
 end)
@@ -384,13 +395,37 @@ function listFrame:resetFilters()
 end
 
 
+function listFrame:checkSubtags(pTag, cFunc)
+	local pattern = "^"..pTag.."\n"
+	for i = 1, #self.tags do
+		local tag = self.tags[i]
+		if tag ~= pTag and tag:find(pattern) and cFunc(tag) then
+			return true
+		end
+	end
+	return false
+end
+
+
+function listFrame:hasSubtag(pTag)
+	return self:checkSubtags(pTag, function() return true end)
+end
+
+
 function listFrame:getTagFromPS(pTag, sTag)
 	return pTag.."\n"..sTag
 end
 
 
 function listFrame:getPSFromTag(tag)
-	return ("\n"):split(tag)
+	local pTag, sTag = tag:match("^(.+)\n(.+)$")
+	if pTag then return pTag, sTag end
+	return tag
+end
+
+
+function listFrame:getTagStr(tag)
+	return tag:gsub("\n", "|cff808080/|r")
 end
 
 
@@ -405,7 +440,7 @@ function listFrame:addTag(pTag, name)
 			end
 		end
 		tinsert(self.tags, text)
-		sort(self.tags)
+		sort(self.tags, self.strSort)
 		self.tagsFilter[text] = true
 		if name then self:setAddonTag(name, text) end
 	end)
@@ -423,6 +458,13 @@ do
 			tags[newTag] = tags[oldTag]
 			tags[oldTag] = nil
 		end
+		for i = 1, #self.tags do
+			local tag = self.tags[i]
+			local pTag, sTag = self:getPSFromTag(tag)
+			if pTag == oldTag then
+				renameTag(self, tag, self:getTagFromPS(newTag, sTag))
+			end
+		end
 	end
 
 	function listFrame:editTag(eTag)
@@ -438,16 +480,7 @@ do
 				end
 			end
 			renameTag(self, eTag, text)
-			if sTag == nil then
-				for i = 1, #self.tags do
-					local tag = self.tags[i]
-					local pTag, sTag = self:getPSFromTag(tag)
-					if pTag == eTag then
-						renameTag(self, tag, self:getTagFromPS(text, sTag))
-					end
-				end
-			end
-			sort(self.tags)
+			sort(self.tags, self.strSort)
 			self:setCategories()
 		end)
 		if dialog then
@@ -460,44 +493,34 @@ end
 
 
 do
-	local function delTag(self, tag, index)
-		if self.categoriesFilter[tag] == nil then
-			self.catCollapsed[tag] = nil
+	local function delTag(self, dTag)
+		if self.categoriesFilter[dTag] == nil then
+			self.catCollapsed[dTag] = nil
 		end
 		for name in next, self.addonTags do
-			self:removeAddonTag(name, tag)
+			self:removeAddonTag(name, dTag)
 		end
-		self.tagsFilter[tag] = nil
-		if index then
-			tremove(self.tags, index)
-		else
-			for i = 1, #self.tags do
-				if self.tags[i] == tag then
-					tremove(self.tags, i)
-					break
+		self.tagsFilter[dTag] = nil
+		local i = 1
+		local tag = self.tags[i]
+		while tag do
+			if tag == dTag then
+				tremove(self.tags, i)
+			else
+				local pTag, sTag = self:getPSFromTag(tag)
+				if pTag == dTag then
+					delTag(self, tag)
+				else
+					i = i + 1
 				end
 			end
+			tag = self.tags[i]
 		end
 	end
 
-	function listFrame:deleteTag(dTag)
-		local pTag, sTag = self:getPSFromTag(dTag)
-		local text = sTag and pTag.." / "..sTag or pTag
-		StaticPopup_Show(self.addonName.."DELETE_TAG", NORMAL_FONT_COLOR_CODE..text..FONT_COLOR_CODE_CLOSE, nil, function()
-			delTag(self, dTag)
-			if sTag == nil then
-				local i = 1
-				local tag = self.tags[i]
-				while tag do
-					local pTag, sTag = self:getPSFromTag(tag)
-					if sTag and pTag == dTag then
-						delTag(self, tag, i)
-					else
-						i = i + 1
-					end
-					tag = self.tags[i]
-				end
-			end
+	function listFrame:deleteTag(tag)
+		StaticPopup_Show(self.addonName.."DELETE_TAG", NORMAL_FONT_COLOR_CODE..self:getTagStr(tag)..FONT_COLOR_CODE_CLOSE, nil, function()
+			delTag(self, tag)
 			self:setCategories()
 		end)
 	end
@@ -511,8 +534,7 @@ function listFrame:getAddonTagsStr(name)
 		for i = 1, #self.tags do
 			local tag = self.tags[i]
 			if addonTags[tag] then
-				local pTag, sTag = self:getPSFromTag(tag)
-				list[#list + 1] = sTag and pTag.." / "..sTag or tag
+				list[#list + 1] = self:getTagStr(tag)
 			end
 		end
 		return table.concat(list, ", ")

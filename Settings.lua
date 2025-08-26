@@ -135,6 +135,13 @@ listFrame:HookScript("OnShow", function(self)
 			info.checked = self.config.showVersion
 			dd:ddAddButton(info, level)
 
+			info.text = L["Infinity Nesting of Subtags"]
+			info.func = function(_,_,_, checked)
+				self.config.infinitySubtags = checked or nil
+			end
+			info.checked = self.config.infinitySubtags
+			dd:ddAddButton(info, level)
+
 			info.func = nil
 			info.checked = nil
 			info.notCheckable = true

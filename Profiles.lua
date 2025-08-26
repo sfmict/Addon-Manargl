@@ -96,7 +96,7 @@ function listFrame:PLAYER_LOGOUT()
 	if not curCharProfile then
 		curCharProfile = {name = charName, addons = {}}
 		self.charProfiles[#self.charProfiles + 1] = curCharProfile
-		sort(self.charProfiles, function(a, b) return a.name < b.name end)
+		sort(self.charProfiles, function(a, b) return strcmputf8i(a.name, b.name) < 0 end)
 	end
 	curCharProfile.class = select(2, UnitClass("player"))
 	self:saveProfileAddons(curCharProfile)
@@ -567,7 +567,7 @@ function listFrame:createProfile()
 			local profile = {name = text, addons = {}}
 			self:saveProfileAddons(profile)
 			self.profiles[#self.profiles + 1] = profile
-			sort(self.profiles, function(a, b) return a.name < b.name end)
+			sort(self.profiles, function(a, b) return strcmputf8i(a.name, b.name) < 0 end)
 		end
 	end)
 	if dialog and lastProfileName then
@@ -592,7 +592,7 @@ function listFrame:editProfile(editProfile)
 				return
 			end
 			editProfile.name = text
-			sort(self.profiles, function(a, b) return a.name < b.name end)
+			sort(self.profiles, function(a, b) return strcmputf8i(a.name, b.name) < 0 end)
 		end
 	end)
 	if dialog then

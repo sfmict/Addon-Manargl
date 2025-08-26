@@ -83,6 +83,7 @@ L["Show Name instead of Title"] = "Показывать имя вместо за
 L["Show Icon"] = "Показывать иконку"
 L["Show no Icon Texture"] = "Показвать иноку нет текстуры"
 L["Show Version"] = "Показывать версию"
+L["Infinity Nesting of Subtags"] = "Бесконечная вложенность подтегов"
 L["Categories by"] = "Категории по"
 L["Group by"] = "Группировать по"
 L["Dependencies"] = "Зависимостям"
