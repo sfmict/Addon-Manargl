@@ -268,7 +268,7 @@ listFrame:HookScript("OnShow", function(self)
 			local list = {}
 			local func = function(_, tag, _, checked)
 				self.tagsFilter[tag] = checked
-				for i = level - 1, 1, -1 do
+				for i = level, 1, -1 do
 					dd:ddRefresh(i)
 				end
 				self:updateFilters()

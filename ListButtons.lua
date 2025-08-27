@@ -165,7 +165,7 @@ listFrame:HookScript("OnShow", function(self)
 				else
 					self:removeAddonTag(name, tag, true)
 				end
-				for i = level - 1, 1, -1 do
+				for i = level, 1, -1 do
 					dd:ddRefresh(i)
 				end
 			end
