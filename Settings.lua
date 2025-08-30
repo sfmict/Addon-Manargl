@@ -341,7 +341,7 @@ listFrame:HookScript("OnShow", function(self)
 
 			info.func = function(btn)
 				self.config.sortBy = btn.value
-				self:sort()
+				self:setCategories()
 				dd:ddRefresh(level)
 			end
 			info.checked = function(btn) return btn.value == self.config.sortBy end

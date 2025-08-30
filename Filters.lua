@@ -4,20 +4,8 @@ local listFrame = AddonMgrAddonList
 
 
 listFrame:HookScript("OnShow", function(self)
-	local OnAccept = function(popup, cb)
-		local editBox = popup.editBox or popup.EditBox
-		local text = editBox:GetText()
-		if text and text ~= "" then cb(popup, text) end
-	end
-	local EditBoxOnEnterPressed = function(self)
-		StaticPopup_OnClick(self:GetParent(), 1)
-	end
-	local EditBoxOnEscapePressed = function(self)
-		self:GetParent():Hide()
-	end
-
-	StaticPopupDialogs[self.addonName.."ADD_TAG"] = {
-		text = addon..": "..L["Add tag"],
+	StaticPopupDialogs[self.addonName.."ADD_EDIT_TAG"] = {
+		text = addon..": %s",
 		button1 = ACCEPT,
 		button2 = CANCEL,
 		hasEditBox = 1,
@@ -25,26 +13,17 @@ listFrame:HookScript("OnShow", function(self)
 		editBoxWidth = 200,
 		hideOnEscape = 1,
 		whileDead = 1,
-		OnAccept = OnAccept,
-		EditBoxOnEnterPressed = EditBoxOnEnterPressed,
-		EditBoxOnEscapePressed = EditBoxOnEscapePressed,
-		OnShow = function(self)
-			local editBox = self.editBox or self.EditBox
-			editBox:SetFocus()
+		OnAccept = function(popup, cb)
+			local editBox = popup.editBox or popup.EditBox
+			local text = editBox:GetText()
+			if text and text ~= "" then cb(popup, text) end
 		end,
-	}
-	StaticPopupDialogs[self.addonName.."EDIT_TAG"] = {
-		text = addon..": "..EDIT,
-		button1 = ACCEPT,
-		button2 = CANCEL,
-		hasEditBox = 1,
-		maxLetters = 48,
-		editBoxWidth = 350,
-		hideOnEscape = 1,
-		whileDead = 1,
-		OnAccept = OnAccept,
-		EditBoxOnEnterPressed = EditBoxOnEnterPressed,
-		EditBoxOnEscapePressed = EditBoxOnEscapePressed,
+		EditBoxOnEnterPressed = function(self)
+			StaticPopup_OnClick(self:GetParent(), 1)
+		end,
+		EditBoxOnEscapePressed = function(self)
+			self:GetParent():Hide()
+		end,
 	}
 	StaticPopupDialogs[self.addonName.."TAG_EXISTS"] = {
 		text = addon..": "..L["Tag already exists."],
@@ -396,7 +375,7 @@ end
 
 
 function listFrame:checkSubtags(pTag, cFunc)
-	local pattern = "^"..pTag.."\n"
+	local pattern = self:getPTagPattern(pTag)
 	for i = 1, #self.tags do
 		local tag = self.tags[i]
 		if tag ~= pTag and tag:find(pattern) and cFunc(tag) then
@@ -412,44 +391,54 @@ function listFrame:hasSubtag(pTag)
 end
 
 
-function listFrame:getTagFromPS(pTag, sTag)
-	return pTag.."\n"..sTag
-end
+do
+	local delimiter = "\n"
+	local matchPS = "^(.+)"..delimiter.."(.+)$"
 
+	function listFrame:getPTagPattern(tag)
+		return "^"..tag..delimiter
+	end
 
-function listFrame:getPSFromTag(tag)
-	local pTag, sTag = tag:match("^(.+)\n(.+)$")
-	if pTag then return pTag, sTag end
-	return tag
-end
+	function listFrame:getTagFromPS(pTag, sTag)
+		return pTag..delimiter..sTag
+	end
 
+	function listFrame:getPSFromTag(tag)
+		local pTag, sTag = tag:match(matchPS)
+		if pTag then return pTag, sTag end
+		return tag
+	end
 
-function listFrame:getTagStr(tag)
-	return tag:gsub("\n", "|cff808080/|r")
+	function listFrame:getTagStr(tag)
+		return tag:gsub(delimiter, "|cff808080/|r")
+	end
 end
 
 
 function listFrame:addTag(pTag, name)
-	StaticPopup_Show(self.addonName.."ADD_TAG", nil, nil, function(popup, text)
-		if pTag then text = self:getTagFromPS(pTag, text) end
+	local dialog = StaticPopup_Show(self.addonName.."ADD_EDIT_TAG", pTag and L["Add subtag"] or L["Add tag"], nil, function(popup, newTag)
+		if pTag then newTag = self:getTagFromPS(pTag, newTag) end
 		for i, tag in ipairs(self.tags) do
-			if tag == text then
+			if tag == newTag then
 				popup:Hide()
 				StaticPopup_Show(self.addonName.."TAG_EXISTS")
 				return
 			end
 		end
-		tinsert(self.tags, text)
+		tinsert(self.tags, newTag)
 		sort(self.tags, self.strSort)
-		self.tagsFilter[text] = true
-		if name then self:setAddonTag(name, text) end
+		self.tagsFilter[newTag] = true
+		if name then self:setAddonTag(name, newTag) end
 	end)
+	if dialog then
+		(dialog.editBox or dialog.EditBox):SetFocus()
+	end
 end
 
 
 do
-	local function renameTag(self, oldTag, newTag)
-		self.tags[tIndexOf(self.tags, oldTag)] = newTag
+	local function renameTag(self, oldTag, newTag, i)
+		self.tags[i] = newTag
 		self.tagsFilter[newTag] = self.tagsFilter[oldTag]
 		self.tagsFilter[oldTag] = nil
 		self.catCollapsed[newTag] = self.catCollapsed[oldTag]
@@ -458,28 +447,31 @@ do
 			tags[newTag] = tags[oldTag]
 			tags[oldTag] = nil
 		end
-		for i = 1, #self.tags do
-			local tag = self.tags[i]
-			local pTag, sTag = self:getPSFromTag(tag)
-			if pTag == oldTag then
-				renameTag(self, tag, self:getTagFromPS(newTag, sTag))
-			end
-		end
 	end
 
 	function listFrame:editTag(eTag)
 		local pTag, sTag = self:getPSFromTag(eTag)
-		local dialog = StaticPopup_Show(self.addonName.."EDIT_TAG", nil, nil, function(popup, text)
-			if sTag then text = self:getTagFromPS(pTag, text) end
-			if text == eTag then return end
+		local dialog = StaticPopup_Show(self.addonName.."ADD_EDIT_TAG", EDIT, nil, function(popup, newTag)
+			if sTag then newTag = self:getTagFromPS(pTag, newTag) end
+			if newTag == eTag then return end
 			for i, tag in ipairs(self.tags) do
-				if tag == text then
+				if tag == newTag then
 					popup:Hide()
 					StaticPopup_Show(self.addonName.."TAG_EXISTS")
 					return
 				end
 			end
-			renameTag(self, eTag, text)
+			local pattern = self:getPTagPattern(eTag)
+			for i, tag in ipairs(self.tags) do
+				if tag == eTag then
+					renameTag(self, tag, newTag, i)
+				else
+					local s,e = tag:find(pattern)
+					if e then
+						renameTag(self, tag, self:getTagFromPS(newTag, tag:sub(e+1)), i)
+					end
+				end
+			end
 			sort(self.tags, self.strSort)
 			self:setCategories()
 		end)
@@ -492,38 +484,28 @@ do
 end
 
 
-do
-	local function delTag(self, dTag)
-		if self.categoriesFilter[dTag] == nil then
-			self.catCollapsed[dTag] = nil
-		end
-		for name in next, self.addonTags do
-			self:removeAddonTag(name, dTag)
-		end
-		self.tagsFilter[dTag] = nil
+function listFrame:deleteTag(dTag)
+	StaticPopup_Show(self.addonName.."DELETE_TAG", NORMAL_FONT_COLOR_CODE..self:getTagStr(dTag)..FONT_COLOR_CODE_CLOSE, nil, function()
+		local pattern = self:getPTagPattern(dTag)
 		local i = 1
 		local tag = self.tags[i]
 		while tag do
-			if tag == dTag then
+			if tag == dTag or tag:find(pattern) then
 				tremove(self.tags, i)
-			else
-				local pTag, sTag = self:getPSFromTag(tag)
-				if pTag == dTag then
-					delTag(self, tag)
-				else
-					i = i + 1
+				if self.categoriesFilter[tag] == nil then
+					self.catCollapsed[tag] = nil
 				end
+				for name in next, self.addonTags do
+					self:removeAddonTag(name, tag)
+				end
+				self.tagsFilter[tag] = nil
+			else
+				i = i + 1
 			end
 			tag = self.tags[i]
 		end
-	end
-
-	function listFrame:deleteTag(tag)
-		StaticPopup_Show(self.addonName.."DELETE_TAG", NORMAL_FONT_COLOR_CODE..self:getTagStr(tag)..FONT_COLOR_CODE_CLOSE, nil, function()
-			delTag(self, tag)
-			self:setCategories()
-		end)
-	end
+		self:setCategories()
+	end)
 end
 
 

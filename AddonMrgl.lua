@@ -561,7 +561,7 @@ end
 
 
 function listFrame:categorySort(categoryList)
-	local sortByTitle = self.config.sortByTitle == "title"
+	local sortByTitle = self.config.sortBy == "title"
 
 	sort(categoryList, function(nameA, nameB)
 		if nameA == nameB then return false end
