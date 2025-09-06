@@ -141,7 +141,7 @@ listFrame:SetScript("OnShow", function(self)
 
 	local lsfdd = LibStub("LibSFDropDown-1.5")
 
-	if C_Texture.GetAtlasInfo("questlog-icon-setting") then
+	if self.isMainline then
 		self.settingsBtn.icon:SetAtlas("questlog-icon-setting", true)
 		self.settingsBtn.highlight = self.settingsBtn:CreateTexture(nil, "HIGHLIGHT")
 		self.settingsBtn.highlight:SetPoint("CENTER")
@@ -414,7 +414,7 @@ listFrame:SetScript("OnShow", function(self)
 	self.okay:SetWidth(width)
 	self.cancel:SetWidth(width)
 
-	self.okay:SetScript("onClick", function(btn)
+	self.okay:SetScript("OnClick", function(btn)
 		PlaySound(SOUNDKIT.GS_LOGIN_CHANGE_REALM_OK)
 		local parent = btn:GetParent()
 		parent.save = true
@@ -882,7 +882,7 @@ function listFrame:getAddonDepsString(name)
 		local color = HIGHLIGHT_FONT_COLOR
 		if reason == "MISSING" then
 			color = RED_FONT_COLOR
-		elseif reason ~= "DISABLED" then
+		elseif reason == "" then
 			color = GREEN_FONT_COLOR
 		end
 		deps[i] = color:WrapTextInColorCode(dName)

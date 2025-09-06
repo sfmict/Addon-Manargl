@@ -157,6 +157,20 @@ local function setActualInstances()
 end
 
 
+function listFrame:PLAYER_UPDATE_RESTING()
+	if IsResting() and self.autoLoadProfiles.resting then
+		local profile = self:getProfileByName(self.autoLoadProfiles.resting)
+		if profile then
+			if requireLoadProfile(profile) then
+				self:loadProfileAddons(profile, true)
+			end
+			return true
+		end
+	end
+end
+listFrame:RegisterEvent("PLAYER_UPDATE_RESTING")
+
+
 function listFrame:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
 	if isInitialLogin or isReloadingUi then
 		self:setAutoLoadObj()
@@ -164,6 +178,7 @@ function listFrame:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
 	end
 	if not next(self.autoLoadProfiles) then return end
 	setActualInstances()
+	if self:PLAYER_UPDATE_RESTING() then return end
 
 	C_Timer.After(0, function()
 		local _, instanceType, difficultyID, _,_,_,_, instanceID = GetInstanceInfo()
@@ -291,6 +306,10 @@ listFrame:HookScript("OnShow", function(self)
 			info.keepShownOnClick = true
 			info.notCheckable = true
 			info.hasArrow = true
+
+			info.text = TUTORIAL_TITLE30
+			info.value = "resting"
+			dd:ddAddButton(info, level)
 
 			info.text = WORLD
 			info.value = "none"
