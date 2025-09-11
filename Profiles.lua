@@ -109,19 +109,29 @@ listFrame:RegisterEvent("PLAYER_LOGOUT")
 
 
 -- AUTOLOAD PROFILES
-local function requireLoadProfile(profile, context)
+local function addToList(list, profile, context)
 	context = context or {}
 	if context[profile] then return end
 	context[profile] = true
 	for addonName in next, profile.addons do
-		local loadable, reason = C_AddOns.IsAddOnLoadable(addonName, listFrame.charGUID)
-		if reason == "DISABLED" then return true end
+		list[addonName] = true
 	end
 	if profile.loadProfiles then
 		for name in next, profile.loadProfiles do
 			local lProfile = listFrame:getProfileByName(name)
-			if lProfile and requireLoadProfile(lProfile, context) then return true end
+			if lProfile then addToList(list, lProfile, context) end
 		end
+	end
+end
+
+
+local function requireLoadProfile(profile, context)
+	local list = {}
+	addToList(list, profile)
+	for i = 1, #listFrame.sorted do
+		local addonName = listFrame.sorted[i]
+		local loadable, reason = C_AddOns.IsAddOnLoadable(addonName, listFrame.charGUID)
+		if (reason ~= "DISABLED") == not list[addonName] then return true end
 	end
 end
 
