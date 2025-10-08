@@ -642,13 +642,12 @@ do
 
 			sortCategories(self, self.categories)
 			self:categorySort(self.uncategorized)
+			self:updateFilters()
 		else
 			self.categories = nil
 			self.uncategorized = nil
-			self:sort()
+			self:sort(true)
 		end
-
-		self:updateFilters()
 	end
 end
 
