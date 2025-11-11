@@ -541,7 +541,7 @@ function listFrame:sort(force)
 			elseif val > 0 then return false end
 		end
 
-		return strcmputf8i(nameA:lower(), nameB:lower()) < 0
+		return strcmputf8i(nameA, nameB) < 0
 	end)
 
 	if cpuSortBy and not force then
@@ -572,7 +572,7 @@ function listFrame:categorySort(categoryList)
 			elseif val > 0 then return false end
 		end
 
-		return strcmputf8i(nameA:lower(), nameB:lower()) < 0
+		return strcmputf8i(nameA, nameB) < 0
 	end)
 end
 
@@ -881,7 +881,7 @@ function listFrame:getAddonDepsString(name)
 		local color = HIGHLIGHT_FONT_COLOR
 		if reason == "MISSING" then
 			color = RED_FONT_COLOR
-		elseif reason == "" then
+		elseif reason == "" or (reason == "DEMAND_LOADED" or reason == "DEP_DEMAND_LOADED") and C_AddOns.IsAddOnLoaded(dName) then
 			color = GREEN_FONT_COLOR
 		end
 		deps[i] = color:WrapTextInColorCode(dName)
