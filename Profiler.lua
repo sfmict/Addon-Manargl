@@ -1,8 +1,9 @@
-local listFrame, accuracyColorStr = AddonMgrAddonList
+local listFrame = AddonMgrAddonList
 local ProfilerIsEnabled = C_AddOnProfiler.IsEnabled
 local ProfilerGetApplicationMetric = C_AddOnProfiler.GetApplicationMetric
 local ProfilerGetAddOnMetric = C_AddOnProfiler.GetAddOnMetric
 local ProfilerGetOverallMetric = C_AddOnProfiler.GetOverallMetric
+local min, accuracyColorStr = math.min
 
 
 listFrame.enumRecentAverageTime = Enum.AddOnProfilerMetric.RecentAverageTime
@@ -17,7 +18,7 @@ listFrame.enumCountTimeOver500Ms = Enum.AddOnProfilerMetric.CountTimeOver500Ms
 
 
 local function getColorPercent(percent)
-	local color = (100 - math.min(percent, 100)) * 2.55
+	local color = (100 - min(percent, 100)) * 2.55
 	return accuracyColorStr:format(color, color, percent)
 end
 
@@ -62,7 +63,7 @@ function listFrame:updateOverallMetric(btn, metric)
 	local overallVal = ProfilerGetOverallMetric(metric)
 	btn.bottomStr:SetText(getColorPercent(overallVal / appVal * 100))
 	btn.ms = overallVal
-	if btn:IsMouseOver() then btn:GetScript("OnEnter")(btn) end
+	if btn.isHover then btn:GetScript("OnEnter")(btn) end
 end
 
 

@@ -24,6 +24,8 @@ L["Middle click to clean the memory"] = "СКМ очистить память"
 L["Enabled for current character"] = "Включено для текущего персонажа"
 L["Enabled for some other characters"] = "Включено для некоторых других персонажей"
 L["SEARCH_ADDON_TOOLTIP"] = "Помогает определить аддон путем отсеивания, в процессе интерфейс будет перезагружен несколько раз"
+L["Scale"] = "Масштаб"
+L["Right click to reset"] = "ПКМ для сброса"
 -- CONTEXTMENU
 L["Lock addon"] = "Заблокировать аддон"
 L["Enalbe with children"] = "Включить с дочерними"

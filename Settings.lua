@@ -4,13 +4,65 @@ local listFrame = AddonMgrAddonList
 
 
 listFrame:HookScript("OnShow", function(self)
+	-- scale
+	self.scaleSlider:SetMinMaxValues(50, 200)
+	self.scaleSlider:SetValueStep(1)
+	self.scaleSlider:SetValue(self.config.scale)
+
+	self.scaleSlider:SetScript("OnValueChanged", function(scaleSlider, value)
+		if self.config.scale == value then return end
+		if scaleSlider.ignore then scaleSlider:SetValue(100) return end
+		if scaleSlider.cur == nil then scaleSlider.cur = self:GetScale() end
+		self.config.scale = value
+		local scale = value * .01
+		local ks = scale / self:GetScale()
+		local right = self:GetRight() / ks
+		local top = self:GetTop() / ks
+		self:SetScale(scale)
+		self:ClearAllPoints()
+		self:SetPoint("TOPRIGHT", UIParent, "BOTTOMLEFT", right, top)
+		self:GetScript("OnDragStop")(self)
+		scaleSlider:SetScale(scaleSlider.cur / scale)
+		if scaleSlider.isHover then scaleSlider:GetScript("OnEnter")(scaleSlider) end
+	end)
+	self.scaleSlider:SetScript("OnMouseDown", function(scaleSlider, button)
+		if button == "RightButton" then
+			scaleSlider:SetValue(100)
+			scaleSlider:SetScale(1)
+			scaleSlider.ignore = true
+		end
+	end)
+	self.scaleSlider:SetScript("OnMouseUp", function(scaleSlider)
+		scaleSlider.cur = nil
+		scaleSlider.ignore = nil
+		scaleSlider:SetScale(1)
+	end)
+	self.scaleSlider:SetScript("OnMouseWheel", function(scaleSlider, delta)
+		scaleSlider:SetValue(scaleSlider:GetValue() + delta)
+		scaleSlider.cur = nil
+		scaleSlider:SetScale(1)
+	end)
+	self.scaleSlider:SetScript("OnEnter", function(scaleSlider)
+		scaleSlider.isHover = true
+		GameTooltip:SetOwner(scaleSlider, "ANCHOR_RIGHT")
+		GameTooltip:AddLine(L["Scale"].." ("..scaleSlider:GetValue().."%)")
+		GameTooltip:AddLine(self.RIGHT_MOUSE_ICON..L["Right click to reset"], 1, 1, 1)
+		GameTooltip:Show()
+	end)
+	self.scaleSlider:SetScript("OnLeave", function(scaleSlider)
+		scaleSlider.isHover = nil
+		GameTooltip:Hide()
+	end)
+
+	-- settings
 	LibStub("LibSFDropDown-1.5"):SetMixin(self.settingsBtn)
 	self.settingsBtn:ddHideWhenButtonHidden()
 	self.settingsBtn:ddSetNoGlobalMouseEvent(true)
 	self.settingsBtn:ddSetDisplayMode(self.isMainline and "menu" or "menuBackdrop")
 	self.settingsBtn:SetScript("OnClick", function(self)
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-		self:ddToggle(1, nil, self, -10, 0)
+		local scale = self:GetEffectiveScale() / UIParent:GetScale()
+		self:ddToggle(1, nil, self, scale < 1 and -10 * scale or -10, 0)
 	end)
 
 	self.settingsBtn:ddSetInitFunc(function(dd, level, value)

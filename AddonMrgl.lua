@@ -33,6 +33,7 @@ function listFrame:ADDON_LOADED(addonName)
 	self.db.catCollapsed = self.db.catCollapsed or {}
 
 	self.config = self.db.config
+	self.config.scale = self.config.scale or 100
 	self.config.listGroup = self.config.listGroup or "dep"
 	self.config.sortBy = self.config.sortBy or "name"
 	if self.config.memUpdate == nil then self.config.memUpdate = 30 end
@@ -179,11 +180,14 @@ listFrame:SetScript("OnShow", function(self)
 	local maxHeight = UIParent:GetHeight() - 100
 	local width = Clamp(self.config.width or 600, minWidth, maxWidth)
 	local height = Clamp(self.config.height or maxHeight * .75, minHeight, maxHeight)
+	self:SetScale(self.config.scale * .01)
 	self:SetSize(width, height)
 	if self.config.posX and self.config.posY then
 		local scale = self:GetEffectiveScale()
 		self:SetPoint("CENTER", UIParent, "BOTTOMLEFT", self.config.posX / scale, self.config.posY / scale)
 	end
+	self:SetPoint("CENTER", UIParent, "BOTTOMLEFT", self:GetCenter())
+	self:SetClampedToScreen(false)
 
 	-- MOVING
 	self:SetScript("OnDragStart", self.StartMoving)
@@ -330,6 +334,7 @@ listFrame:SetScript("OnShow", function(self)
 	end
 
 	local cpuBtnOnEnter = function(btn)
+		btn.isHover = true
 		if btn.ms then
 			GameTooltip:SetOwner(self.performance, "ANCHOR_NONE")
 			GameTooltip:SetPoint("RIGHT", self.performance, "LEFT", -2, 3)
@@ -338,22 +343,27 @@ listFrame:SetScript("OnShow", function(self)
 		end
 	end
 
+	local cpuBtnOnLeave = function(btn)
+		btn.isHover = nil
+		GameTooltip:Hide()
+	end
+
 	self.currentCPU.value = "current"
 	self.currentCPU:SetScript("OnClick", cpuBtnClick)
 	self.currentCPU:SetScript("OnEnter", cpuBtnOnEnter)
-	self.currentCPU:SetScript("OnLeave", GameTooltip_Hide)
+	self.currentCPU:SetScript("OnLeave", cpuBtnOnLeave)
 	self.averageCPU.value = "average"
 	self.averageCPU:SetScript("OnClick", cpuBtnClick)
 	self.averageCPU:SetScript("OnEnter", cpuBtnOnEnter)
-	self.averageCPU:SetScript("OnLeave", GameTooltip_Hide)
+	self.averageCPU:SetScript("OnLeave", cpuBtnOnLeave)
 	self.peakCPU.value = "peak"
 	self.peakCPU:SetScript("OnClick", cpuBtnClick)
 	self.peakCPU:SetScript("OnEnter", cpuBtnOnEnter)
-	self.peakCPU:SetScript("OnLeave", GameTooltip_Hide)
+	self.peakCPU:SetScript("OnLeave", cpuBtnOnLeave)
 	self.encounterCPU.value = "encounter"
 	self.encounterCPU:SetScript("OnClick", cpuBtnClick)
 	self.encounterCPU:SetScript("OnEnter", cpuBtnOnEnter)
-	self.encounterCPU:SetScript("OnLeave", GameTooltip_Hide)
+	self.encounterCPU:SetScript("OnLeave", cpuBtnOnLeave)
 
 	-- LIST
 	local indent = 16

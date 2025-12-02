@@ -21,6 +21,8 @@ L["Middle click to clean the memory"] = "Middle click to clean the memory"
 L["Enabled for current character"] = "Enabled for current character"
 L["Enabled for some other characters"] = "Enabled for some other characters"
 L["SEARCH_ADDON_TOOLTIP"] = "This helps identify the addon by sifting. In the process, the interface will reload several times."
+L["Scale"] = "Scale"
+L["Right click to reset"] = "Right click to reset"
 -- CONTEXTMENU
 L["Lock addon"] = "Lock addon"
 L["Enalbe with children"] = "Enalbe with children"

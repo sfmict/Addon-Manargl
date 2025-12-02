@@ -52,6 +52,12 @@
 					<OnMouseUp>self.icon:AdjustPointsOffset(-1, 1)</OnMouseUp>
 				</Scripts>
 			</Button>
+			<Slider parentKey="scaleSlider" inherits="MinimalSliderTemplate" frameLevel="2502">
+				<Size x="80" y="10"/>
+				<Anchors>
+					<Anchor point="TOPRIGHT" x="-47" y="-7"/>
+				</Anchors>
+			</Slider>
 			<Frame parentKey="inset" useParentLevel="true" inherits="InsetFrameTemplate">
 				<Anchors>
 					<Anchor point="TOPLEFT" x="10" y="-60" />
