@@ -12,6 +12,8 @@ listFrame:HookScript("OnShow", function(self)
 	if self.TitleContainer.TitleBg then -- classic
 		self.TitleContainer.TitleBg:Hide()
 	end
+	S:HandleSliderFrame(self.scaleSlider)
+	self.scaleSlider:SetPoint("TOPRIGHT", -47, -6)
 	self.settingsBtn:ddSetDisplayMode("ElvUI")
 	S:HandleCloseButton(self.closeButton)
 	S:HandleEditBox(self.searchBox)
