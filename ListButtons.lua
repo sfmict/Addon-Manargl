@@ -292,6 +292,16 @@ function AddonMgrListCategoryMixin:onLeave()
 end
 
 
+function AddonMgrListCategoryMixin:onMouseDown()
+	self.title:AdjustPointsOffset(1, -1)
+end
+
+
+function AddonMgrListCategoryMixin:onMouseUp()
+	self.title:AdjustPointsOffset(-1, 1)
+end
+
+
 function AddonMgrListCategoryMixin:onClick(button)
 	if button == "LeftButton" or button == "MiddleButton" then
 		local node = self:GetElementData()

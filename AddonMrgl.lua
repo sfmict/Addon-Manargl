@@ -69,15 +69,6 @@ function listFrame:ADDON_LOADED(addonName)
 		indexByName[name] = i
 	end
 
-	for k in next, self.depCollapsed do
-		for name in k:gmatch("[^\n]+") do
-			if indexByName[name] == nil then
-				self.depCollapsed[k] = nil
-				break
-			end
-		end
-	end
-
 	for name in next, self.locked do
 		if indexByName[name] == nil then
 			self.locked[name] = nil
@@ -236,18 +227,29 @@ listFrame:SetScript("OnShow", function(self)
 	self.categoriesFilter[#self.categoriesFilter + 1] = "rest"
 	self.categoriesFilter["rest"] = true
 
-	-- REMOVE NON-EXISTENT COLLAPSE CATEGORIES
-	for cat in next, self.catCollapsed do
-		local exists = self.categoriesFilter[cat]
-		if exists == nil then
-			for i = 1, #self.tags do
-				if cat == self.tags[i] then
-					exists = true
-					break
-				end
+	-- REMOVE NON-EXISTENT COLLAPSE ADDONS
+	local tags = {}
+	for i = 1, #self.tags do
+		tags[self.tags[i]] = 1
+	end
+
+	for k in next, self.depCollapsed do
+		for name in k:gmatch("[^\n]+") do
+			if tags[name] == nil
+			and self.categoriesFilter[name] == nil
+			and C_AddOns.GetAddOnInfo(name) == nil
+			then
+				self.depCollapsed[k] = nil
+				break
 			end
 		end
-		if exists == nil then
+	end
+
+	-- REMOVE NON-EXISTENT COLLAPSE CATEGORIES
+	for cat in next, self.catCollapsed do
+		if tags[cat] == nil
+		and self.categoriesFilter[cat] == nil
+		then
 			self.catCollapsed[cat] = nil
 		end
 	end
@@ -673,6 +675,7 @@ function listFrame:getCollapsedKey(node)
 		node = node:GetParent()
 		data = node:GetData()
 	end
+	if data then k = data.name.."\n"..k end
 	return k
 end
 
@@ -1183,10 +1186,10 @@ do
 		f.toggleBtn.check:ClearAllPoints()
 		if n == len then
 			f.checked = 1
-			f.toggleBtn.check:SetPoint("LEFT", f.toggleBtn.bg)
+			f.toggleBtn.check:SetPoint("CENTER", f.toggleBtn.bg, 2, 1)
 			f.toggleBtn.check:SetAtlas("common-dropdown-icon-checkmark-yellow", true)
 		elseif n > 0 then
-			f.toggleBtn.check:SetSize(8, 8)
+			f.toggleBtn.check:SetSize(10, 10)
 			f.toggleBtn.check:SetPoint("CENTER", f.toggleBtn.bg)
 			f.toggleBtn.check:SetColorTexture(1, .8, 0)
 			f.checked = 2
