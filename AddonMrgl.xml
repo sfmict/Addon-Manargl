@@ -4,14 +4,16 @@
 	<Button name="addonMgrPerformanceBtn" virtual="true">
 		<Layers>
 			<Layer level="BACKGROUND">
-				<FontString parentKey="topStr" inherits="GameFontNormalSmall">
+				<FontString parentKey="topStr" inherits="GameFontNormalSmall" justifyV="MIDDLE">
 					<Anchors>
 						<Anchor point="TOP" y="-2"/>
+						<Anchor point="BOTTOM" relativePoint="CENTER"/>
 					</Anchors>
 				</FontString>
-				<FontString parentKey="bottomStr" inherits="GameFontWhite">
+				<FontString parentKey="bottomStr" inherits="GameFontWhite" justifyV="MIDDLE">
 					<Anchors>
-						<Anchor point="TOP" relativeKey="$parent.topStr" relativePoint="BOTTOM" y="-2"/>
+						<Anchor point="TOP" relativePoint="CENTER"/>
+						<Anchor point="BOTTOM" y="2"/>
 					</Anchors>
 				</FontString>
 			</Layer>
