@@ -69,6 +69,7 @@ L["Are you sure you want to delete tag %s?"] = "Are you sure you want to delete 
 -- SETTINGS
 L["Options"] = "Options"
 L["Show minimap button"] = "Show minimap button"
+L["Do not show tooltip"] = "Do not show tooltip"
 L["Replace Addon wow menu button"] = "Replace Addon wow menu button"
 L["Memory Update"] = "Memory Update"
 L["CPU Update"] = "CPU Update"
@@ -101,6 +102,6 @@ L["Search for the guilty addon"] = "Search for the guilty addon"
 
 
 setmetatable(L, {__index = function(self, key)
-	self[key] = key or ""
-	return key
+	self[key] = "[PH]"..key
+	return self[key]
 end})

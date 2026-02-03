@@ -72,6 +72,7 @@ L["Are you sure you want to delete tag %s?"] = "Вы уверены, что хо
 -- SETTINGS
 L["Options"] = "Опции"
 L["Show minimap button"] = "Показать кнопку миникарты"
+L["Do not show tooltip"] = "Не показывать подсказку"
 L["Replace Addon wow menu button"] = "Заменить кнопку модификации в меню"
 L["Memory Update"] = "Обновление памяти"
 L["CPU Update"] = "Обновления ЦП"

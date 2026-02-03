@@ -67,6 +67,7 @@ C_Timer.After(0, function()
 			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 		end,
 		OnTooltipShow = function(tooltip)
+			if listFrame.db.omb.dontShowTooltip then return end
 			local title = C_AddOns.GetAddOnMetadata(addon, "Title")
 			local version  = C_AddOns.GetAddOnMetadata(addon, "Version")
 			tooltip:SetText(("%s (|cffff7f3f%s|r)"):format(title, version))

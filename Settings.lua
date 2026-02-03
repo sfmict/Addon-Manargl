@@ -99,6 +99,15 @@ listFrame:HookScript("OnShow", function(self)
 			info.checked = not self.db.omb.hide
 			dd:ddAddButton(info, level)
 
+			info.indent = 16
+			info.text = L["Do not show tooltip"]
+			info.func = function(_,_,_, checked)
+				self.db.omb.dontShowTooltip = checked or nil
+			end
+			info.checked = self.db.omb.dontShowTooltip
+			dd:ddAddButton(info, level)
+
+			info.indent = nil
 			info.text = L["Replace Addon wow menu button"]
 			info.func = function(_,_,_, checked)
 				self.config.replaceAddonButton = checked
