@@ -2,15 +2,14 @@ local addon, ns = ...
 local L = ns.L
 local listFrame = AddonMgrAddonList
 local wipe, next, ipairs, strcmputf8i, C_AddOns = wipe, next, ipairs, strcmputf8i, C_AddOns
+local BANNED, SECURE_PROTECTED, SECURE, INSECURE = "BANNED", "SECURE_PROTECTED", "SECURE", "INSECURE"
+local MISSING, DEMAND_LOADED, DEP_DEMAND_LOADED, DISABLED, DEP_DISABLED = "MISSING", "DEMAND_LOADED", "DEP_DEMAND_LOADED", "DISABLED", "DEP_DISABLED"
 
 listFrame.strSort = function(a, b) return strcmputf8i(a, b) < 0 end
 listFrame.isMainline = WOW_PROJECT_MAINLINE == WOW_PROJECT_ID
 listFrame.LEFT_MOUSE_ICON = C_Texture.GetAtlasInfo("newplayertutorial-icon-mouse-leftbutton") and "|A:newplayertutorial-icon-mouse-leftbutton:0:0|a " or ""
 listFrame.RIGHT_MOUSE_ICON = C_Texture.GetAtlasInfo("newplayertutorial-icon-mouse-rightbutton") and "|A:newplayertutorial-icon-mouse-rightbutton:0:0|a " or ""
 listFrame.MIDDLE_MOUSE_ICON = C_Texture.GetAtlasInfo("newplayertutorial-icon-mouse-middlebutton") and "|A:newplayertutorial-icon-mouse-middlebutton:0:0|a " or ""
-local BANNED = "BANNED"
-local SECURE_PROTECTED = "SECURE_PROTECTED"
-local SECURE = "SECURE"
 
 
 listFrame:SetScript("OnEvent", function(self, event, ...) self[event](self, ...) end)
@@ -463,8 +462,12 @@ end)
 listFrame:SetScript("OnHide", function(self)
 	if self.save then
 		C_AddOns.SaveAddOns()
+		if self.preLastLoadProfileName then
+			self:setLastLoadProfileName(self.preLastLoadProfileName)
+		end
 	else
 		C_AddOns.ResetAddOns()
+		self.preLastLoadProfileName = nil
 	end
 	self.save = nil
 end)
@@ -867,7 +870,7 @@ function listFrame:enableAddonDependencies(name, enabled, context)
 	if deps == nil then return end
 	for _, dName in ipairs(deps) do
 		local _,_,_,_,_, security = C_AddOns.GetAddOnInfo(dName)
-		if security == "INSECURE" then
+		if security == INSECURE then
 			self:enableAddon(dName, enabled)
 			self:enableAddonDependencies(dName, enabled, context)
 		end
@@ -892,9 +895,9 @@ function listFrame:getAddonDepsString(name)
 		local dName = deps[i]
 		local loadable, reason = C_AddOns.IsAddOnLoadable(dName, self.charGUID)
 		local color = HIGHLIGHT_FONT_COLOR
-		if reason == "MISSING" then
+		if reason == MISSING then
 			color = RED_FONT_COLOR
-		elseif reason == "" or (reason == "DEMAND_LOADED" or reason == "DEP_DEMAND_LOADED") and C_AddOns.IsAddOnLoaded(dName) then
+		elseif reason == "" or (reason == DEMAND_LOADED or reason == DEP_DEMAND_LOADED) and C_AddOns.IsAddOnLoaded(dName) then
 			color = GREEN_FONT_COLOR
 		end
 		deps[i] = color:WrapTextInColorCode(dName)
@@ -936,9 +939,9 @@ do
 		GameTooltip:ClearLines()
 		if security == BANNED then
 			GameTooltip:SetText(ADDON_BANNED_TOOLTIP)
-		elseif reason == "MISSING" then
+		elseif reason == MISSING then
 			GameTooltip:AddLine(name)
-			GameTooltip:AddLine(_G["ADDON_"..reason], 1,0,0)
+			GameTooltip:AddLine(ADDON_MISSING, 1,0,0)
 		else
 			local version = C_AddOns.GetAddOnMetadata(name, "Version")
 			addDoubleLine(title, version)
@@ -990,7 +993,7 @@ end
 function listFrame:hasAnyChanges()
 	for i = 1, C_AddOns.GetNumAddOns() do
 		local loadable, reason = C_AddOns.IsAddOnLoadable(i, self.charGUID)
-		if reason ~= "DEMAND_LOADED" and reason ~= "DEP_DEMAND_LOADED" and loadable ~= C_AddOns.IsAddOnLoaded(i) then
+		if reason ~= DEMAND_LOADED and reason ~= DEP_DEMAND_LOADED and loadable ~= C_AddOns.IsAddOnLoaded(i) then
 			return true
 		end
 	end
@@ -1056,14 +1059,14 @@ function listFrame:normalInit(f, node)
 	local loadable, reason = C_AddOns.IsAddOnLoadable(name, self.charGUID)
 	local checkboxState = C_AddOns.GetAddOnEnableState(name, self.addonCharacter)
 	local enabled = checkboxState > Enum.AddOnEnableState.None
-	local charEnabled = reason ~= "DISABLED"
+	local charEnabled = reason ~= DISABLED
 	local loaded = C_AddOns.IsAddOnLoaded(name)
 	f.loaded = loaded
 
 	local titleText = self.config.showNameInsteadOfTitle and name or title
-	if loadable or charEnabled and (reason == "DEMAND_LOADED" or reason == "DEP_DEMAND_LOADED") then
+	if loadable or charEnabled and (reason == DEMAND_LOADED or reason == DEP_DEMAND_LOADED) then
 		f.title:SetTextColor(1, .78, 0)
-	elseif charEnabled and reason ~= "DEP_DISABLED" then
+	elseif charEnabled and reason ~= DEP_DISABLED then
 		f.title:SetTextColor(1, .1, .1)
 		titleText = titleText:gsub("|[Cc]%x%x%x%x%x%x%x%x", ""):gsub("|[Rr]", "")
 	else
@@ -1118,7 +1121,7 @@ function listFrame:normalInit(f, node)
 		end
 	end
 
-	if not loaded and reason == "DEMAND_LOADED" then
+	if not loaded and reason == DEMAND_LOADED then
 		if self:isAddonLoadOnDemand(name) then
 			f.loadButton:Show()
 			f.status:Hide()
@@ -1130,7 +1133,7 @@ function listFrame:normalInit(f, node)
 	else
 		f.loadButton:Hide()
 		f.status:Show()
-		if loadable ~= loaded and reason ~= "DEMAND_LOADED" and reason ~= "DEP_DEMAND_LOADED" then
+		if loadable ~= loaded and reason ~= DEMAND_LOADED and reason ~= DEP_DEMAND_LOADED then
 			f.loaded = false
 			f.status:SetText(RED_FONT_COLOR:WrapTextInColorCode(REQUIRES_RELOAD))
 		elseif loaded then
@@ -1296,7 +1299,7 @@ function listFrame:setFiltred(text, list, filtred)
 		local author = searchBy.author and C_AddOns.GetAddOnMetadata(name, "Author")
 		local category = C_AddOns.GetAddOnMetadata(name, "Category")
 		local loadable, reason = C_AddOns.IsAddOnLoadable(name, self.addonCharacter)
-		local enabled = loadable or reason == "DEMAND_LOADED"
+		local enabled = loadable or reason == DEMAND_LOADED
 
 		if (enabled and self.filters.enabled or not enabled and self.filters.disabled)
 		and self.categoriesFilter[category or "rest"]

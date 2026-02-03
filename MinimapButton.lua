@@ -18,13 +18,14 @@ menu:ddSetInitFunc(function(dd, level)
 	info.text = L["Profiles"]
 	dd:ddAddButton(info, level)
 
+	local lastLoadName = listFrame:getLastLoadProfileName()
 	local func = function(btn) listFrame:loadProfileAddons(btn.value, true) end
 
 	local list = {}
 	for i, profile in ipairs(listFrame.profiles) do
 		list[i] = {
 			notCheckable = true,
-			text = ("%s |cff808080(%d %s)"):format(profile.name, profile.count, ADDONS),
+			text = listFrame:getProfileDisplayName(profile, lastLoadName),
 			value = profile,
 			func = func,
 		}
@@ -57,7 +58,8 @@ C_Timer.After(0, function()
 				menu:ddToggle(1, nil, self, "TOPRIGHT", "BOTTOMRIGHT")
 			elseif button == "MiddleButton" then
 				collectgarbage()
-				self:GetScript("OnEnter")(self)
+				local func = self:GetScript("OnEnter")
+				if func then func(self) end
 			else
 				menu:ddCloseMenus()
 				addonToggle()

@@ -125,7 +125,7 @@ local function addToList(list, profile, context)
 end
 
 
-local function requireLoadProfile(profile, context)
+local function requireLoadProfile(profile)
 	local list = {}
 	addToList(list, profile)
 	for i = 1, #listFrame.sorted do
@@ -233,6 +233,7 @@ listFrame:HookScript("OnShow", function(self)
 			if #self.profiles ~= 0 then
 				dd:ddAddSeparator(level)
 
+				local lastLoadName = self:getLastLoadProfileName()
 				local widgets = {
 					{
 						icon = [[Interface\WorldMap\GEAR_64GREY]],
@@ -253,7 +254,7 @@ listFrame:HookScript("OnShow", function(self)
 					list[i] = {
 						hasArrow = true,
 						notCheckable = true,
-						text = ("%s |cff808080(%d %s)"):format(profile.name, profile.count, ADDONS),
+						text = self:getProfileDisplayName(profile, lastLoadName),
 						value = profile,
 						func = func,
 						remove = remove,
@@ -501,6 +502,36 @@ function listFrame:rewriteProfileAddons(profile)
 end
 
 
+function listFrame:getProfileDisplayName(profile, lastLoadName)
+	return ("%s |cff808080(%d %s)|r %s"):format(
+		profile.name,
+		profile.count,
+		ADDONS,
+		lastLoadName == profile.name and "|cffffd200(L)|r" or ""
+	)
+end
+
+
+function listFrame:setLastLoadProfileName(name)
+	if self.config.usePlayer then
+		self.config.lastLoadCharProfileName = self.config.lastLoadCharProfileName or {}
+		self.config.lastLoadCharProfileName[self.charGUID] = name
+	else
+		self.config.lastLoadCharProfileName = nil
+		self.config.lastLoadProfileName = name
+	end
+end
+
+
+function listFrame:getLastLoadProfileName()
+	if self.config.lastLoadCharProfileName then
+		local name = self.config.lastLoadCharProfileName[self.charGUID]
+		if name then return name end
+	end
+	return self.config.lastLoadProfileName
+end
+
+
 function listFrame:getProfileByName(name)
 	if name then
 		for _, profile in ipairs(self.profiles) do
@@ -527,15 +558,19 @@ end
 
 
 function listFrame:loadProfile(profile, reloadCheck)
+	self.preLastLoadProfileName = nil
 	self:setAddonsEnabled(false)
 	self:enableAddonsTree(profile, true)
 
 	if reloadCheck then
+		self:setLastLoadProfileName(profile.name)
 		if self:hasAnyChanges() then
 			ReloadUI()
 			return
 		end
 		C_AddOns.SaveAddOns()
+	else
+		self.preLastLoadProfileName = profile.name
 	end
 
 	if self:IsShown() then

@@ -318,7 +318,7 @@ end
 
 
 function AddonMgrListCategoryMixin:updateState()
-	self.icon:SetAtlas(self:GetElementData():IsCollapsed() and "glues-characterselect-icon-plus" or "glues-characterselect-icon-minus", true)
+	self.icon:SetAtlas(self:GetElementData():IsCollapsed() and "QuestLog-icon-Expand" or "QuestLog-icon-shrink", true)
 end
 
 
@@ -395,10 +395,8 @@ end
 
 
 function AddonMgrListNormalMixin:onLeave()
-	if self:IsShown() then
-		listFrame.tooltipData = nil
-		GameTooltip:Hide()
-	end
+	listFrame.tooltipData = nil
+	GameTooltip:Hide()
 end
 
 

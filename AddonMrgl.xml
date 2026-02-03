@@ -204,7 +204,7 @@
 			<Layer level="OVERLAY" textureSubLevel="2">
 				<Texture parentKey="icon" atlas="glues-characterselect-icon-minus" useAtlasSize="true">
 					<Anchors>
-						<Anchor point="RIGHT" x="-6"/>
+						<Anchor point="RIGHT" x="-6" y="-1"/>
 					</Anchors>
 				</Texture>
 				<FontString inherits="GameFontNormal" justifyH="CENTER" parentKey="title" wordwrap="false">
