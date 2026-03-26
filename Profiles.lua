@@ -288,9 +288,10 @@ listFrame:HookScript("OnShow", function(self)
 				if profile.name ~= charName then
 					empty = false
 					local _,_,_, color = GetClassColor(profile.class)
+					local name, realm = (" "):split(profile.name, 2)
 					list[#list + 1] = {
 						notCheckable = true,
-						text = ("|c%s%s|r |cff808080(%d %s)|r"):format(color, profile.name, profile.count, ADDONS),
+						text = ("|c%s%s|r %s |cff808080(%d %s)|r"):format(color, name, realm, profile.count, ADDONS),
 						value = profile,
 						func = func,
 						remove = remove,

@@ -45,6 +45,7 @@ L["Add subtag"] = "Добавить подтег"
 -- PROFILES
 L["Profiles"] = "Профили"
 L["Characters"] = "Персонажи"
+L["Clear all"] = "Удалить всех"
 L["Autoload profile"] = "Автозагрузка профиля"
 L["Character Specific"] = "Для персонажа"
 L["Load"] = "Загрузить"

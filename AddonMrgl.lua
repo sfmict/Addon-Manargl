@@ -59,6 +59,7 @@ function listFrame:ADDON_LOADED(addonName)
 
 	self.charName = UnitNameUnmodified("player")
 	self.charGUID = UnitGUID("player")
+	self:setAddonCharacter()
 	self.sorted = {}
 	local indexByName = {}
 
@@ -449,7 +450,6 @@ listFrame:SetScript("OnShow", function(self)
 	-- INIT
 	self:setCpuAccuracyStr()
 	self:updatePerformance()
-	self:setAddonCharacter()
 	self:updateCpuButtons()
 	self:updateReloadButton()
 	UpdateAddOnMemoryUsage()

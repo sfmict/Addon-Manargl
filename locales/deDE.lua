@@ -44,6 +44,7 @@ local L = ns.L
 -- PROFILES
 --L["Profiles"] = ""
 --L["Characters"] = ""
+--L["Clear all"] = ""
 --L["Autoload profile"] = ""
 --L["Character Specific"] = ""
 --L["Load"] = ""
@@ -71,6 +72,7 @@ local L = ns.L
 -- SETTINGS
 --L["Options"] = ""
 --L["Show minimap button"] = ""
+--L["Do not show tooltip"] = ""
 --L["Replace Addon wow menu button"] = ""
 --L["Memory Update"] = ""
 --L["CPU Update"] = ""

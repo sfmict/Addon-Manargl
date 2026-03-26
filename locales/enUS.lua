@@ -42,6 +42,7 @@ L["Add subtag"] = "Add Subtag"
 -- PROFILES
 L["Profiles"] = "Profiles"
 L["Characters"] = "Characters"
+L["Clear all"] = "Clear all"
 L["Autoload profile"] = "Autoload profile"
 L["Character Specific"] = "Character Specific"
 L["Load"] = "Load"
