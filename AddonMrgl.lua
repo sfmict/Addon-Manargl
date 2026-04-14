@@ -77,7 +77,7 @@ function listFrame:ADDON_LOADED(addonName)
 
 	function self:ADDON_LOADED(addonName)
 		if self.dataProvider and self:IsShown() and self:isAddonShown(addonName) then
-			UpdateAddOnMemoryUsage()
+			self:updateAddonMemoryUsage(true)
 			self:sort()
 		end
 	end
@@ -452,7 +452,7 @@ listFrame:SetScript("OnShow", function(self)
 	self:updatePerformance()
 	self:updateCpuButtons()
 	self:updateReloadButton()
-	UpdateAddOnMemoryUsage()
+	self:updateAddonMemoryUsage()
 	self.uTimer = .1
 	self.syncCounter = 0
 	self:SetScript("OnUpdate", self.onUpdate)
@@ -474,7 +474,7 @@ end)
 
 
 function listFrame:onShow()
-	UpdateAddOnMemoryUsage()
+	self:updateAddonMemoryUsage()
 	self:updatePerformance()
 	self:updateReloadButton()
 	if self.config.cpuSortBy then

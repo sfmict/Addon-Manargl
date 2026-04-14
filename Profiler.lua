@@ -100,6 +100,17 @@ function listFrame:updateAddonMetrics(f)
 end
 
 
+function listFrame:updateAddonMemoryUsage(force)
+	local now = GetTime()
+	local lastMememoryUpdate = self.lastMememoryUpdate or 0
+	local interval = self.config.memUpdate or 30
+	if now >= lastMememoryUpdate + interval or force then
+		self.lastMememoryUpdate = now
+		UpdateAddOnMemoryUsage()
+	end
+end
+
+
 function listFrame:onUpdate(elapsed)
 	self.uTimer = self.uTimer - elapsed
 	if self.uTimer > 0 then return end
@@ -109,7 +120,7 @@ function listFrame:onUpdate(elapsed)
 	local needUpdate = false
 
 	if self.config.memUpdate and timer % self.config.memUpdate == 0 then
-		UpdateAddOnMemoryUsage()
+		self:updateAddonMemoryUsage()
 		needUpdate = true
 	end
 

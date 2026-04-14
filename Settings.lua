@@ -256,7 +256,6 @@ listFrame:HookScript("OnShow", function(self)
 			info.keepShownOnClick = true
 
 			info.func = function(btn)
-				self.memUpdateTimer = btn.value or 0
 				self.config.memUpdate = btn.value
 				dd:ddRefresh(level)
 			end

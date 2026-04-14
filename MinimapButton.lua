@@ -57,7 +57,10 @@ C_Timer.After(0, function()
 				menu:ddSetNoGlobalMouseEvent(true, self)
 				menu:ddToggle(1, nil, self, "TOPRIGHT", "BOTTOMRIGHT")
 			elseif button == "MiddleButton" then
-				collectgarbage()
+				if not IsControlKeyDown() then
+					collectgarbage()
+				end
+				listFrame:updateAddonMemoryUsage(true)
 				local func = self:GetScript("OnEnter")
 				if func then func(self) end
 			else
@@ -75,7 +78,7 @@ C_Timer.After(0, function()
 			local totalMem = 0
 			local maxAddons = 10
 			local topAddons = {}
-			UpdateAddOnMemoryUsage()
+			listFrame:updateAddonMemoryUsage()
 
 			for i = 1, C_AddOns.GetNumAddOns() do
 				local mem = GetAddOnMemoryUsage(i)

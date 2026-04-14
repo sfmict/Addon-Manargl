@@ -289,9 +289,17 @@ listFrame:HookScript("OnShow", function(self)
 					empty = false
 					local _,_,_, color = GetClassColor(profile.class)
 					local name, realm = (" "):split(profile.name, 2)
+					local t = CLASS_ICON_TCOORDS[profile.class]
 					list[#list + 1] = {
 						notCheckable = true,
 						text = ("|c%s%s|r %s |cff808080(%d %s)|r"):format(color, name, realm, profile.count, ADDONS),
+						icon = "Interface/Glues/CharacterCreate/UI-CharacterCreate-Classes",
+						iconInfo = {
+							tCoordLeft = t[1],
+							tCoordRight = t[2],
+							tCoordTop = t[3],
+							tCoordBottom = t[4],
+						},
 						value = profile,
 						func = func,
 						remove = remove,
