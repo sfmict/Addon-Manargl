@@ -840,6 +840,20 @@ do
 end
 
 
+function listFrame:setChildByGroup(filtred, hasParentByName, childByPName)
+	for i = 1, #filtred do
+		local name = filtred[i]
+		local gName = C_AddOns.GetAddOnMetadata(name, "Group")
+		if filtred[gName] and name ~= gName then
+			hasParentByName[name] = true
+			local childs = childByPName[gName]
+			if childs then childs[#childs + 1] = name
+			else childByPName[gName] = {name} end
+		end
+	end
+end
+
+
 function listFrame:getAddonDepsString(name)
 	local deps = {C_AddOns.GetAddOnDependencies(name)}
 	if #deps == 0 then return "" end

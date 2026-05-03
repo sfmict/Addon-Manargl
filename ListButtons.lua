@@ -268,20 +268,6 @@ listFrame:HookScript("OnShow", function(self)
 end)
 
 
-function listFrame:setChildByGroup(filtred, hasParentByName, childByPName)
-	for i = 1, #filtred do
-		local name = filtred[i]
-		local gName = C_AddOns.GetAddOnMetadata(name, "Group")
-		if filtred[gName] and name ~= gName then
-			hasParentByName[name] = true
-			local childs = childByPName[gName]
-			if childs then childs[#childs + 1] = name
-			else childByPName[gName] = {name} end
-		end
-	end
-end
-
-
 function listFrame:setAddonsEnabled(enabled, char)
 	for i = 1, #self.sorted do
 		self:enableAddon(self.sorted[i], enabled, char)
