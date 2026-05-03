@@ -308,7 +308,7 @@ function listFrame:enableAddonDependencies(name, enabled, context)
 	if deps == nil then return end
 	for _, dName in ipairs(deps) do
 		local _,_,_,_,_, security = C_AddOns.GetAddOnInfo(dName)
-		if security == INSECURE then
+		if security == "INSECURE" then
 			self:enableAddon(dName, enabled)
 			self:enableAddonDependencies(dName, enabled, context)
 		end

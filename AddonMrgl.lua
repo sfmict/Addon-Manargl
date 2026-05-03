@@ -2,7 +2,7 @@ local addon, ns = ...
 local L = ns.L
 local listFrame = AddonMgrAddonList
 local wipe, next, ipairs, strcmputf8i, C_AddOns = wipe, next, ipairs, strcmputf8i, C_AddOns
-local BANNED, SECURE_PROTECTED, SECURE, INSECURE = "BANNED", "SECURE_PROTECTED", "SECURE", "INSECURE"
+local BANNED, SECURE_PROTECTED, SECURE = "BANNED", "SECURE_PROTECTED", "SECURE"
 local MISSING, DEMAND_LOADED, DEP_DEMAND_LOADED, DISABLED, DEP_DISABLED = "MISSING", "DEMAND_LOADED", "DEP_DEMAND_LOADED", "DISABLED", "DEP_DISABLED"
 
 listFrame.strSort = function(a, b) return strcmputf8i(a, b) < 0 end
