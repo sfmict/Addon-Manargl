@@ -25,6 +25,7 @@ function listFrame:ADDON_LOADED(addonName)
 	self.db.charProfiles = self.db.charProfiles or {}
 	self.db.depCollapsed = self.db.depCollapsed or {}
 	self.db.locked = self.db.locked or {}
+	self.db.notes = self.db.notes or {}
 	self.db.omb = self.db.omb or {}
 	self.db.autoLoadProfiles = self.db.autoLoadProfiles or {}
 	self.db.tags = self.db.tags or {}
@@ -53,6 +54,7 @@ function listFrame:ADDON_LOADED(addonName)
 	self.charProfiles = self.db.charProfiles
 	self.depCollapsed = self.db.depCollapsed
 	self.locked = self.db.locked
+	self.notes = self.db.notes
 	self.tags = self.db.tags
 	self.addonTags = self.db.addonTags
 	self.catCollapsed = self.db.catCollapsed
@@ -72,6 +74,12 @@ function listFrame:ADDON_LOADED(addonName)
 	for name in next, self.locked do
 		if indexByName[name] == nil then
 			self.locked[name] = nil
+		end
+	end
+
+	for name in next, self.notes do
+		if indexByName[name] == nil then
+			self.notes[name] = nil
 		end
 	end
 
@@ -125,6 +133,8 @@ listFrame:SetScript("OnShow", function(self)
 	self.averageIcon = CreateSimpleTextureMarkup([[Interface\AddOns\AddonMrgl\media\average]], 16, 16)
 	self.peakIcon = CreateSimpleTextureMarkup([[Interface\AddOns\AddonMrgl\media\peak]], 16, 16)
 	self.encounterIcon = CreateSimpleTextureMarkup([[Interface\AddOns\AddonMrgl\media\weapon]], 16, 16)
+
+	self.noteIcon = "|TInterface/FriendsFrame/UI-FriendsFrame-Note:12:12:0:0:12:12:0:12:0:12:255:209:0|t"
 
 	self.currentStr = self.currentIcon.." %s"
 	self.averageStr = "%s |Cff777777|||r "..self.averageIcon.." %s"
@@ -830,64 +840,6 @@ do
 end
 
 
-function listFrame:setChildByGroup(filtred, hasParentByName, childByPName)
-	for i = 1, #filtred do
-		local name = filtred[i]
-		local gName = C_AddOns.GetAddOnMetadata(name, "Group")
-		if filtred[gName] and name ~= gName then
-			hasParentByName[name] = true
-			local childs = childByPName[gName]
-			if childs then childs[#childs + 1] = name
-			else childByPName[gName] = {name} end
-		end
-	end
-end
-
-
-function listFrame:setAddonsEnabled(enabled, char)
-	for i = 1, #self.sorted do
-		self:enableAddon(self.sorted[i], enabled, char)
-	end
-end
-
-
-function listFrame:enableAddon(name, enabled, char)
-	if self.locked[name] and char == nil then return end
-	if char == nil then char = self.addonCharacter end
-	if enabled then
-		C_AddOns.EnableAddOn(name, char or nil)
-	else
-		C_AddOns.DisableAddOn(name, char or nil)
-	end
-end
-
-
-function listFrame:enableAddonDependencies(name, enabled, context)
-	context = context or {}
-	if context[name] then return end
-	context[name] = true
-	local deps = self.depsByName[name]
-	if deps == nil then return end
-	for _, dName in ipairs(deps) do
-		local _,_,_,_,_, security = C_AddOns.GetAddOnInfo(dName)
-		if security == INSECURE then
-			self:enableAddon(dName, enabled)
-			self:enableAddonDependencies(dName, enabled, context)
-		end
-	end
-end
-
-
-function listFrame:enableAddonChildren(childList, name, enabled)
-	local childs = childList[name]
-	if not childs then return end
-	for _, aName in ipairs(childs) do
-		self:enableAddon(aName, enabled)
-		self:enableAddonChildren(childList, aName, enabled)
-	end
-end
-
-
 function listFrame:getAddonDepsString(name)
 	local deps = {C_AddOns.GetAddOnDependencies(name)}
 	if #deps == 0 then return "" end
@@ -971,6 +923,11 @@ do
 			addLineNotEmpty(CATEGORIES, C_AddOns.GetAddOnMetadata(name, "Category"))
 			addLineNotEmpty(L["tags"], self:getAddonTagsStr(name))
 			addLineNotEmpty(L["Profiles with addon"], self:getProfilesWithAddon(name))
+
+			if self.notes[name] then
+				GameTooltip:AddLine(" ")
+				GameTooltip:AddLine(self.noteIcon..self.notes[name], 1, 1, 1, true)
+			end
 
 			if notes then
 				GameTooltip:AddLine(" ")

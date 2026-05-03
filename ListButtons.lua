@@ -4,6 +4,27 @@ local listFrame = AddonMgrAddonList
 
 
 listFrame:HookScript("OnShow", function(self)
+	StaticPopupDialogs[self.addonName.."ADD_NOTE"] = {
+		text = addon..": "..SET_FRIENDNOTE_LABEL,
+		button1 = ACCEPT,
+		button2 = CANCEL,
+		hasEditBox = 1,
+		maxLetters = 200,
+		countInvisibleLetters = true,
+		editBoxWidth = 350,
+		hideOnEscape = 1,
+		whileDead = 1,
+		OnAccept = function(popup, cb)
+			cb(popup, (popup.editBox or popup.EditBox):GetText():trim())
+		end,
+		EditBoxOnEnterPressed = function(self)
+			StaticPopup_OnClick(self:GetParent(), 1)
+		end,
+		EditBoxOnEscapePressed = function(self)
+			self:GetParent():Hide()
+		end,
+	}
+
 	self.contextMenu = LibStub("LibSFDropDown-1.5"):SetMixin({})
 	self.contextMenu:ddHideWhenButtonHidden(self.scrollBox)
 	self.contextMenu:ddSetDisplayMode("menu")
@@ -26,11 +47,7 @@ listFrame:HookScript("OnShow", function(self)
 			info.isNotRadio = true
 			info.text = L["Lock addon"]
 			info.func = function(_,_,_, checked)
-				self.locked[name] = checked or nil
-				local button = self.scrollBox:FindFrameByPredicate(function(btn, node)
-					return node:GetData().name == name
-				end)
-				if button then self:normalInit(button, button:GetElementData()) end
+				self:setAddonLocked(name, checked)
 				dd:ddRefresh(level)
 			end
 			info.checked = self.locked[name]
@@ -63,6 +80,8 @@ listFrame:HookScript("OnShow", function(self)
 				dd:ddAddButton(info, level)
 			end
 
+			dd:ddAddSeparator(level)
+
 			info.disabled = nil
 			info.func = nil
 			info.keepShownOnClick = true
@@ -78,9 +97,16 @@ listFrame:HookScript("OnShow", function(self)
 			info.value = "tags"
 			dd:ddAddButton(info, value)
 
+			dd:ddAddSeparator(level)
+
 			info.keepShownOnClick = nil
 			info.hasArrow = nil
 			info.value = nil
+			info.text = SET_NOTE
+			info.func = function() self:setNote(name) end
+			dd:ddAddButton(info, level)
+
+			info.func = nil
 			info.text = CANCEL
 			dd:ddAddButton(info, level)
 
@@ -240,6 +266,83 @@ listFrame:HookScript("OnShow", function(self)
 		self.contextMenu:ddOnHide()
 	end)
 end)
+
+
+function listFrame:setChildByGroup(filtred, hasParentByName, childByPName)
+	for i = 1, #filtred do
+		local name = filtred[i]
+		local gName = C_AddOns.GetAddOnMetadata(name, "Group")
+		if filtred[gName] and name ~= gName then
+			hasParentByName[name] = true
+			local childs = childByPName[gName]
+			if childs then childs[#childs + 1] = name
+			else childByPName[gName] = {name} end
+		end
+	end
+end
+
+
+function listFrame:setAddonsEnabled(enabled, char)
+	for i = 1, #self.sorted do
+		self:enableAddon(self.sorted[i], enabled, char)
+	end
+end
+
+
+function listFrame:enableAddon(name, enabled, char)
+	if self.locked[name] and char == nil then return end
+	if char == nil then char = self.addonCharacter end
+	if enabled then
+		C_AddOns.EnableAddOn(name, char or nil)
+	else
+		C_AddOns.DisableAddOn(name, char or nil)
+	end
+end
+
+
+function listFrame:enableAddonDependencies(name, enabled, context)
+	context = context or {}
+	if context[name] then return end
+	context[name] = true
+	local deps = self.depsByName[name]
+	if deps == nil then return end
+	for _, dName in ipairs(deps) do
+		local _,_,_,_,_, security = C_AddOns.GetAddOnInfo(dName)
+		if security == INSECURE then
+			self:enableAddon(dName, enabled)
+			self:enableAddonDependencies(dName, enabled, context)
+		end
+	end
+end
+
+
+function listFrame:setAddonLocked(name, locked)
+	self.locked[name] = locked or nil
+	local button = self.scrollBox:FindFrameByPredicate(function(btn, node)
+		return node:GetData().name == name
+	end)
+	if button then self:normalInit(button, button:GetElementData()) end
+end
+
+
+function listFrame:enableAddonChildren(childList, name, enabled)
+	local childs = childList[name]
+	if not childs then return end
+	for _, aName in ipairs(childs) do
+		self:enableAddon(aName, enabled)
+		self:enableAddonChildren(childList, aName, enabled)
+	end
+end
+
+
+function listFrame:setNote(name)
+	local dialog = StaticPopup_Show(self.addonName.."ADD_NOTE", name, nil, function(popup, note)
+		self.notes[name] = note ~= "" and note or nil
+	end)
+	if dialog and self.notes[name] then
+		(dialog.editBox or dialog.EditBox):SetText(self.notes[name])
+	end
+end
 
 
 AddonMgrListCategoryMixin = {}
