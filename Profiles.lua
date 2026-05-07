@@ -35,7 +35,7 @@ StaticPopupDialogs[listFrame.addonName.."PROFILE_EXISTS"] = {
 	button1 = OKAY,
 	hideOnEscape = 1,
 	whileDead = 1,
-	enterClicksFirstButton = 1,
+	-- enterClicksFirstButton = 1,
 	OnAccept = profileExistsAccept,
 	OnCancel = profileExistsAccept,
 }
@@ -78,7 +78,7 @@ StaticPopupDialogs[listFrame.addonName.."CUSTOM_OK_CANCEL"] = {
 	button2 = CANCEL,
 	hideOnEscape = 1,
 	whileDead = 1,
-	enterClicksFirstButton = 1,
+	-- enterClicksFirstButton = 1,
 	OnAccept = function(_, cb) cb() end,
 }
 
