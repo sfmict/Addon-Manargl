@@ -699,7 +699,7 @@ end
 
 
 function listFrame:isCatCollapsed(name)
-	return self.catCollapsed[name] and self.notSearched
+	return self.notSearched and self.catCollapsed[name]
 end
 
 
@@ -709,7 +709,7 @@ end
 
 
 function listFrame:isGroupCollapsed(node)
-	return self.depCollapsed[self:getCollapsedKey(node)] and self.notSearched
+	return self.notSearched and self.depCollapsed[self:getCollapsedKey(node)]
 end
 
 
