@@ -19,12 +19,12 @@ listFrame.enumCountTimeOver500Ms = Enum.AddOnProfilerMetric.CountTimeOver500Ms
 
 local function getColorPercent(percent)
 	local color = (100 - min(percent, 100)) * 2.55
-	return accuracyColorStr:format(color, color, percent)
+	return accuracyColorStr:format(color, percent)
 end
 
 
 function listFrame:setCpuAccuracyStr()
-	accuracyColorStr = "|cffff%.2x%.2x%."..self.config.cpuAccuracy.."f%%|r"
+	accuracyColorStr = "|cffff%.2x%1$.2x%."..self.config.cpuAccuracy.."f%%|r"
 	self.accuracyZeroStr = ("%."..self.config.cpuAccuracy.."f%%"):format(0)
 	self.accuracyDelta = .5 / 10^self.config.cpuAccuracy
 end
@@ -42,9 +42,9 @@ end
 function listFrame:getAddonMetricPercent(name, metric)
 	local val, ms = self:getAddonMetric(name, metric)
 	if val < self.accuracyDelta then
-		return self.accuracyZeroStr, ms
+		return self.accuracyZeroStr, ms, 100
 	else
-		return getColorPercent(val), ms
+		return getColorPercent(val), ms, 255
 	end
 end
 

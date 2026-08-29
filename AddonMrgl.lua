@@ -136,10 +136,10 @@ listFrame:SetScript("OnShow", function(self)
 
 	self.noteIcon = "|TInterface/FriendsFrame/UI-FriendsFrame-Note:12:12:0:0:12:12:0:12:0:12:255:209:0|t"
 
-	self.currentStr = self.currentIcon.." %s"
-	self.averageStr = "%s |Cff777777|||r "..self.averageIcon.." %s"
-	self.peakStr = "%s |Cff777777|||r "..self.peakIcon.." %s"
-	self.encounterStr = "%s |Cff777777|||r "..self.encounterIcon.." %s"
+	self.currentStr = self.currentIcon:gsub("|t", ":16:16:0:16:0:16:%%3$s:%%3$s:%%3$s|t %%1$s")
+	self.averageStr = self.averageIcon:gsub("(.*)|t", "%%s |Cff777777|||r %1:16:16:0:16:0:16:%%4$s:%%4$s:%%4$s|t %%2$s")
+	self.peakStr = self.peakIcon:gsub("(.*)|t", "%%s |Cff777777|||r %1:16:16:0:16:0:16:%%4$s:%%4$s:%%4$s|t %%2$s")
+	self.encounterStr = self.encounterIcon:gsub("(.*)|t", "%%s |Cff777777|||r %1:16:16:0:16:0:16:%%4$s:%%4$s:%%4$s|t %%2$s")
 
 	local lsfdd = LibStub("LibSFDropDown-1.5")
 
