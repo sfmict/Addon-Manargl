@@ -180,7 +180,7 @@ listFrame:SetScript("OnShow", function(self)
 	local maxWidth = UIParent:GetWidth() - 100
 	local maxHeight = UIParent:GetHeight() - 100
 	local width = Clamp(self.config.width or 600, minWidth, maxWidth)
-	local height = Clamp(self.config.height or maxHeight * .75, minHeight, maxHeight)
+	local height = Clamp(self.config.height or 810, minHeight, maxHeight)
 	self:SetScale(self.config.scale * .01)
 	self:SetSize(width, height)
 	if self.config.posX and self.config.posY then
@@ -437,13 +437,13 @@ listFrame:SetScript("OnShow", function(self)
 	self.cancel:SetWidth(width)
 
 	self.okay:SetScript("OnClick", function(btn)
-		PlaySound(SOUNDKIT.GS_LOGIN_CHANGE_REALM_OK)
 		local parent = btn:GetParent()
-		parent.save = true
-		parent:Hide()
 		if parent.shouldReload then
 			ReloadUI()
 		end
+		PlaySound(SOUNDKIT.GS_LOGIN_CHANGE_REALM_OK)
+		parent.save = true
+		parent:Hide()
 	end)
 
 	self.cancel:SetScript("OnClick", function(btn)

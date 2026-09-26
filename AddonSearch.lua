@@ -25,7 +25,6 @@ listFrame:HookScript("OnShow", function(self)
 	}
 
 	local function continue(inList, popup)
-		popup:Hide()
 		local suspected, justified = self.db.searchAddon.enabled, self.db.searchAddon.disabled
 		if inList then	suspected, justified = justified, suspected end
 
@@ -57,6 +56,7 @@ listFrame:HookScript("OnShow", function(self)
 		if #suspected > 1 then
 			self:listSifting(suspected)
 		else
+			popup:Hide()
 			StaticPopup_Show(listFrame.addonName.."SEARCH_RESULT", NORMAL_FONT_COLOR:WrapTextInColorCode(suspected[1] or "Not Found!"), nil, suspected[1])
 		end
 	end
