@@ -36,6 +36,8 @@ L["Enabled in profile"] = "Включен в профиле"
 -- FILTERS
 L["Enabled"] = "Включенные"
 L["Disabled"] = "Выключеные"
+L["Locked"] = "Заблокированные"
+L["Unlocked"] = "Разблокированные"
 L["Rest"] = "Остальные"
 L["tags"] = "Теги"
 L["No tag"] = "Без тегов"

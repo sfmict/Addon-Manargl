@@ -35,6 +35,8 @@ local L = ns.L
 -- FILTERS
 --L["Enabled"] = ""
 --L["Disabled"] = ""
+--L["Locked"] = ""
+--L["Unlocked"] = ""
 --L["Rest"] = ""
 --L["tags"] = ""
 --L["No tag"] = ""

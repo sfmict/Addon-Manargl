@@ -323,6 +323,8 @@ listFrame:SetScript("OnShow", function(self)
 	self.filters = {
 		enabled = true,
 		disabled = true,
+		locked = true,
+		unlocked = true,
 	}
 	self.noTagFilter = true
 	self.withAllTagsFilter = false
@@ -1263,27 +1265,33 @@ end
 
 function listFrame:setFiltred(text, list, filtred)
 	local searchBy = self.config.searchBy
+	local fEnabled, fDisabled = self.filters.enabled, self.filters.disabled
+	local fLocked, fUnlocked = self.filters.locked, self.filters.unlocked
 	wipe(filtred)
 
 	for i = 1, #list do
 		local name = list[i]
-		local author = searchBy.author and C_AddOns.GetAddOnMetadata(name, "Author")
 		local category = C_AddOns.GetAddOnMetadata(name, "Category")
-		local loadable, reason = C_AddOns.IsAddOnLoadable(name, self.addonCharacter)
-		local enabled = loadable or reason == DEMAND_LOADED
 
-		if (enabled and self.filters.enabled or not enabled and self.filters.disabled)
-		and self.categoriesFilter[category or "rest"]
-		and self:getTagFilter(name)
-		and (self.notSearched
-			or searchBy.name and name:lower():find(text, 1, true)
-			or searchBy.title and self.titleByName[name]:find(text, 1, true)
-			or author and author:lower():find(text, 1, true)
-			or searchBy.category and category and category:lower():find(text, 1, true)
-			or searchBy.tags and self:findTags(name, text))
-		then
-			filtred[name] = true
-			filtred[#filtred + 1] = name
+		if self.categoriesFilter[category or "rest"] then
+			local author = searchBy.author and C_AddOns.GetAddOnMetadata(name, "Author")
+			local loadable, reason = C_AddOns.IsAddOnLoadable(name, self.addonCharacter)
+			local enabled = loadable or reason == DEMAND_LOADED
+			local locked = self.locked[name]
+
+			if (enabled and fEnabled or not enabled and fDisabled)
+			and (locked and fLocked or not locked and fUnlocked)
+			and self:getTagFilter(name)
+			and (self.notSearched
+				or searchBy.name and name:lower():find(text, 1, true)
+				or searchBy.title and self.titleByName[name]:find(text, 1, true)
+				or author and author:lower():find(text, 1, true)
+				or searchBy.category and category and category:lower():find(text, 1, true)
+				or searchBy.tags and self:findTags(name, text))
+			then
+				filtred[name] = true
+				filtred[#filtred + 1] = name
+			end
 		end
 	end
 end

@@ -61,6 +61,22 @@ listFrame:HookScript("OnShow", function(self)
 			info.checked = self.filters.disabled
 			dd:ddAddButton(info, level)
 
+			info.text = L["Locked"]
+			info.func = function(btn, _,_, checked)
+				self.filters.locked = checked
+				self:updateFilters()
+			end
+			info.checked = self.filters.locked
+			dd:ddAddButton(info, level)
+
+			info.text = L["Unlocked"]
+			info.func = function(btn, _,_, checked)
+				self.filters.unlocked = checked
+				self:updateFilters()
+			end
+			info.checked = self.filters.unlocked
+			dd:ddAddButton(info, level)
+
 			dd:ddAddSpace()
 
 			info.func = nil

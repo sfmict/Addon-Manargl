@@ -33,6 +33,8 @@ L["Enabled in profile"] = "Enabled in profile"
 -- FILTERS
 L["Enabled"] = "Enabled"
 L["Disabled"] = "Disabled"
+L["Locked"] = "Locked"
+L["Unlocked"] = "Unlocked"
 L["Rest"] = "Rest"
 L["tags"] = "Tags"
 L["No tag"] = "No Tag"
