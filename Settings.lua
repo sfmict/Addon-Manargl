@@ -133,6 +133,10 @@ listFrame:HookScript("OnShow", function(self)
 				info.text = L["CPU Accuracy"]
 				info.value = "cpuAccuracy"
 				dd:ddAddButton(info, level)
+
+				info.text = L["Tooltip Metrics"]
+				info.value = "ttMetrics"
+				dd:ddAddButton(info, level)
 			end
 
 			dd:ddAddSeparator(level)
@@ -343,6 +347,21 @@ listFrame:HookScript("OnShow", function(self)
 			for i = 1, 4 do
 				info.text = tostring(1 / 10^i)
 				info.value = i
+				dd:ddAddButton(info, level)
+			end
+
+		elseif value == "ttMetrics" then
+			info.keepShownOnClick = true
+			info.isNotRadio = true
+
+			info.func = function(btn)
+				self.config.ttMetrics[btn.value] = not self.config.ttMetrics[btn.value]
+			end
+
+			for i = 1, #self.metrics do
+				info.text = self.metricNames[i]
+				info.value = self.metrics[i]
+				info.checked = self.config.ttMetrics[info.value]
 				dd:ddAddButton(info, level)
 			end
 

@@ -50,6 +50,19 @@ function listFrame:ADDON_LOADED(addonName)
 	if self.config.searchBy.category == nil then self.config.searchBy.category = true end
 	if self.config.searchBy.tags == nil then self.config.searchBy.tags = true end
 
+	self.config.ttMetrics = self.config.ttMetrics or {}
+	for i = 1, #self.metrics do
+		local metric = self.metrics[i]
+		if self.config.ttMetrics[metric] == nil
+		and metric ~= Enum.AddOnProfilerMetric.LastTime
+		and metric ~= Enum.AddOnProfilerMetric.CountTimeOver1Ms
+		and metric ~= Enum.AddOnProfilerMetric.CountTimeOver5Ms
+		and metric ~= Enum.AddOnProfilerMetric.CountTimeOver1000Ms
+		then
+			self.config.ttMetrics[metric] = true
+		end
+	end
+
 	self.profiles = self.db.profiles
 	self.charProfiles = self.db.charProfiles
 	self.depCollapsed = self.db.depCollapsed
@@ -524,66 +537,83 @@ do
 end
 
 
-function listFrame:sort(force)
-	local cpuSortBy = self.config.cpuSortBy
-	local sortByTitle = self.config.sortBy == "title"
-	local metric, copy
-	if cpuSortBy ~= nil then
-		if cpuSortBy == "current" then
-			metric = self.enumRecentAverageTime
-		elseif cpuSortBy == "average" then
-			metric = self.enumSessionAverageTime
-		elseif cpuSortBy == "peak" then
-			metric = self.enumPeakTime
-		elseif cpuSortBy == "encounter" then
-			metric = self.enumEncounterAverageTime
-		end
-		if not force then
-			copy = {}
-			for i = 1, #self.sorted do copy[i] = self.sorted[i] end
-		end
-	end
+do
+	local loadedByName, metricByName, copy = {}, {}, {}
+	function listFrame:sort(force)
+		local cpuSortBy = self.config.cpuSortBy
+		local sortByTitle = self.config.sortBy == "title"
+		local hasMetric = cpuSortBy ~= nil
 
-	sort(self.sorted, function(nameA, nameB)
-		if nameA == nameB then return false end
-
-		if cpuSortBy ~= nil then
-			local loadedA = C_AddOns.IsAddOnLoaded(nameA)
-			local loadedB = C_AddOns.IsAddOnLoaded(nameB)
-
-			if loadedA and loadedB then
-				local ma = self:getAddonMetric(nameA, metric)
-				local mb = self:getAddonMetric(nameB, metric)
-
-				if ma > mb then return true
-				elseif ma < mb then return false end
-
-			elseif loadedA then return true
-			elseif loadedB then return false end
-		end
-
-		if sortByTitle then
-			local val = strcmputf8i(self.titleByName[nameA], self.titleByName[nameB])
-			if val < 0 then return true
-			elseif val > 0 then return false end
-		end
-
-		return strcmputf8i(nameA, nameB) < 0
-	end)
-
-	if cpuSortBy and not force then
-		for i = 1, #self.sorted do
-			if self.sorted[i] ~= copy[i] then
-				self:updateFilters()
-				return
+		if hasMetric then
+			local metric
+			if cpuSortBy == "current" then
+				metric = self.enumRecentAverageTime
+			elseif cpuSortBy == "average" then
+				metric = self.enumSessionAverageTime
+			elseif cpuSortBy == "peak" then
+				metric = self.enumPeakTime
+			elseif cpuSortBy == "encounter" then
+				metric = self.enumEncounterAverageTime
 			end
+
+			for i = 1, #self.sorted do
+				local name = self.sorted[i]
+				local loaded = C_AddOns.IsAddOnLoaded(name)
+				loadedByName[name] = loaded
+				copy[i] = name
+
+				if loaded then
+					metricByName[name] = self:getAddonMetric(name, metric)
+				end
+			end
+
+			sort(self.sorted, function(nameA, nameB)
+				if nameA == nameB then return false end
+
+				local loadedA = loadedByName[nameA]
+				local loadedB = loadedByName[nameB]
+				if loadedA ~= loadedB then return loadedA end
+
+				if loadedA then
+					local ma = metricByName[nameA]
+					local mb = metricByName[nameB]
+					if ma ~= mb then return ma > mb end
+				end
+
+				if sortByTitle then
+					local val = strcmputf8i(self.titleByName[nameA], self.titleByName[nameB])
+					if val ~= 0 then return val < 0 end
+				end
+
+				return strcmputf8i(nameA, nameB) < 0
+			end)
+		else
+			sort(self.sorted, function(nameA, nameB)
+				if nameA == nameB then return false end
+
+				if sortByTitle then
+					local val = strcmputf8i(self.titleByName[nameA], self.titleByName[nameB])
+					if val ~= 0 then return val < 0 end
+				end
+
+				return strcmputf8i(nameA, nameB) < 0
+			end)
 		end
-		for i, f in ipairs(self.view:GetFrames()) do
-			if f.loaded then self:updateAddonMetrics(f) end
+
+		if hasMetric and not force then
+			for i = 1, #self.sorted do
+				if self.sorted[i] ~= copy[i] then
+					self:updateFilters()
+					return
+				end
+			end
+			for i, f in ipairs(self.view:GetFrames()) do
+				if f.loaded then self:updateAddonMetrics(f) end
+			end
+			return
 		end
-		return
+		self:updateFilters()
 	end
-	self:updateFilters()
 end
 
 
@@ -595,8 +625,7 @@ function listFrame:categorySort(categoryList)
 
 		if sortByTitle then
 			local val = strcmputf8i(self.titleByName[nameA], self.titleByName[nameB])
-			if val < 0 then return true
-			elseif val > 0 then return false end
+			if val ~= 0 then return val < 0 end
 		end
 
 		return strcmputf8i(nameA, nameB) < 0
@@ -919,15 +948,12 @@ do
 			local loaded = C_AddOns.IsAddOnLoaded(name)
 			if loaded then
 				if self:isProfilerEnabled() then
-					addLineNotEmpty(L["Current CPU"], self:getAddonMetricPercent(name, self.enumRecentAverageTime))
-					addLineNotEmpty(L["Average CPU"], self:getAddonMetricPercent(name, self.enumSessionAverageTime))
-					addLineNotEmpty(L["Peak CPU"], self:getAddonMetricPercent(name, self.enumPeakTime))
-					addLineNotEmpty(L["Encounter CPU"], self:getAddonMetricPercent(name, self.enumEncounterAverageTime))
-					addLineNotEmpty(L["Ticks over %sms"]:format(5), self:getAddonMetricCount(name, self.enumCountTimeOver5Ms))
-					addLineNotEmpty(L["Ticks over %sms"]:format(10), self:getAddonMetricCount(name, self.enumCountTimeOver10Ms))
-					addLineNotEmpty(L["Ticks over %sms"]:format(50), self:getAddonMetricCount(name, self.enumCountTimeOver50Ms))
-					addLineNotEmpty(L["Ticks over %sms"]:format(100), self:getAddonMetricCount(name, self.enumCountTimeOver100Ms))
-					addLineNotEmpty(L["Ticks over %sms"]:format(500), self:getAddonMetricCount(name, self.enumCountTimeOver500Ms))
+					for i = 1, #self.metrics do
+						local metric = self.metrics[i]
+						if listFrame.config.ttMetrics[metric] then
+							addLineNotEmpty(self.metricNames[i], self:getAddonMetricForDisplay(name, metric))
+						end
+					end
 				end
 
 				if security ~= SECURE_PROTECTED and security ~= SECURE then

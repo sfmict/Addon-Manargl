@@ -1,3 +1,5 @@
+local _, ns = ...
+local L = ns.L
 local listFrame = AddonMgrAddonList
 local ProfilerIsEnabled = C_AddOnProfiler.IsEnabled
 local ProfilerGetApplicationMetric = C_AddOnProfiler.GetApplicationMetric
@@ -10,11 +12,36 @@ listFrame.enumRecentAverageTime = Enum.AddOnProfilerMetric.RecentAverageTime
 listFrame.enumSessionAverageTime = Enum.AddOnProfilerMetric.SessionAverageTime
 listFrame.enumPeakTime = Enum.AddOnProfilerMetric.PeakTime
 listFrame.enumEncounterAverageTime = Enum.AddOnProfilerMetric.EncounterAverageTime
-listFrame.enumCountTimeOver5Ms = Enum.AddOnProfilerMetric.CountTimeOver5Ms
-listFrame.enumCountTimeOver10Ms = Enum.AddOnProfilerMetric.CountTimeOver10Ms
-listFrame.enumCountTimeOver50Ms = Enum.AddOnProfilerMetric.CountTimeOver50Ms
-listFrame.enumCountTimeOver100Ms = Enum.AddOnProfilerMetric.CountTimeOver100Ms
-listFrame.enumCountTimeOver500Ms = Enum.AddOnProfilerMetric.CountTimeOver500Ms
+
+listFrame.metrics = {
+	Enum.AddOnProfilerMetric.RecentAverageTime,
+	Enum.AddOnProfilerMetric.SessionAverageTime,
+	Enum.AddOnProfilerMetric.PeakTime,
+	Enum.AddOnProfilerMetric.EncounterAverageTime,
+	Enum.AddOnProfilerMetric.LastTime,
+	Enum.AddOnProfilerMetric.CountTimeOver1Ms,
+	Enum.AddOnProfilerMetric.CountTimeOver5Ms,
+	Enum.AddOnProfilerMetric.CountTimeOver10Ms,
+	Enum.AddOnProfilerMetric.CountTimeOver50Ms,
+	Enum.AddOnProfilerMetric.CountTimeOver100Ms,
+	Enum.AddOnProfilerMetric.CountTimeOver500Ms,
+	Enum.AddOnProfilerMetric.CountTimeOver1000Ms,
+}
+
+listFrame.metricNames = {
+	L["Current CPU"],
+	L["Average CPU"],
+	L["Peak CPU"],
+	L["Encounter CPU"],
+	L["Last Tick CPU"],
+	L["Ticks over %sms"]:format(1),
+	L["Ticks over %sms"]:format(5),
+	L["Ticks over %sms"]:format(10),
+	L["Ticks over %sms"]:format(50),
+	L["Ticks over %sms"]:format(100),
+	L["Ticks over %sms"]:format(500),
+	L["Ticks over %sms"]:format(1000),
+}
 
 
 local function getColorPercent(percent)
@@ -51,6 +78,15 @@ end
 
 function listFrame:getAddonMetricCount(name, metric)
 	return ProfilerGetAddOnMetric(name, metric)
+end
+
+
+function listFrame:getAddonMetricForDisplay(name, metric)
+	if metric < 5 then
+		return self:getAddonMetricPercent(name, metric)
+	else
+		return self:getAddonMetricCount(name, metric)
+	end
 end
 
 
