@@ -26,7 +26,7 @@ listFrame:HookScript("OnShow", function(self)
 
 	local function continue(inList, popup)
 		local suspected, justified = self.db.searchAddon.enabled, self.db.searchAddon.disabled
-		if inList then	suspected, justified = justified, suspected end
+		if inList then suspected, justified = justified, suspected end
 
 		for i, name in ipairs(justified) do
 			tinsert(self.db.searchAddon.justified, name)
@@ -78,7 +78,7 @@ end)
 
 function listFrame:startSearch()
 	StaticPopupDialogs[listFrame.addonName.."START_SEARCH"] = {
-		text = addon..": "..L["Start seearching for the guilty addon?"],
+		text = addon..": "..L["Start searching for the guilty addon?"],
 		button1 = ACCEPT,
 		button2 = CANCEL,
 		hideOnEscape = 1,

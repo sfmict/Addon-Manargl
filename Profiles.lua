@@ -99,7 +99,7 @@ function listFrame:PLAYER_LOGOUT()
 		sort(self.charProfiles, function(a, b) return strcmputf8i(a.name, b.name) < 0 end)
 	end
 	curCharProfile.class = select(2, UnitClass("player"))
-	self:saveProfileAddons(curCharProfile)
+	self:saveProfileAddons(curCharProfile, self.charGUID)
 
 	if AddonMgrAutoLoadChar and not next(AddonMgrAutoLoadChar) then
 		AddonMgrAutoLoadChar = nil
@@ -491,11 +491,12 @@ function listFrame:setAutoLoadObj()
 end
 
 
-function listFrame:saveProfileAddons(profile)
+function listFrame:saveProfileAddons(profile, char)
+	char = char or self.addonCharacter
 	wipe(profile.addons)
 	profile.count = 0
 	for i = 1, C_AddOns.GetNumAddOns() do
-		if C_AddOns.GetAddOnEnableState(i, self.addonCharacter) > Enum.AddOnEnableState.None then
+		if C_AddOns.GetAddOnEnableState(i, char) > Enum.AddOnEnableState.None then
 			profile.count = profile.count + 1
 			profile.addons[C_AddOns.GetAddOnInfo(i)] = 1
 		end
@@ -600,7 +601,7 @@ end
 
 function listFrame:loadProfileAddons(profile, reloadCheck)
 	local actionText = reloadCheck and L["Load %s profile and reload UI?"] or L["Load %s profile?"]
-	local dialog = StaticPopup_Show(self.addonName.."CUSTOM_OK_CANCEL", actionText:format(NORMAL_FONT_COLOR:WrapTextInColorCode(profile.name)), nil, function()
+	StaticPopup_Show(self.addonName.."CUSTOM_OK_CANCEL", actionText:format(NORMAL_FONT_COLOR:WrapTextInColorCode(profile.name)), nil, function()
 		self:loadProfile(profile, reloadCheck)
 	end)
 end
@@ -664,6 +665,7 @@ function listFrame:editProfile(editProfile)
 				StaticPopup_Show(self.addonName.."PROFILE_EXISTS", nil, nil, editProfile)
 				return
 			end
+			self:renameProfileReferences(editProfile.name, text)
 			editProfile.name = text
 			sort(self.profiles, function(a, b) return strcmputf8i(a.name, b.name) < 0 end)
 		end
@@ -678,7 +680,8 @@ end
 
 function listFrame:removeProfile(removeProfile, profiles)
 	StaticPopup_Show(self.addonName.."DELETE_PROFILE", NORMAL_FONT_COLOR:WrapTextInColorCode(removeProfile.name), nil, function()
-		for i, profile in ipairs(profiles) do
+		for i = #profiles, 1, -1 do
+			local profile = profiles[i]
 			if profile == removeProfile then
 				tremove(profiles, i)
 				if self.selProfileAddons == removeProfile.addons then
@@ -690,6 +693,36 @@ function listFrame:removeProfile(removeProfile, profiles)
 			end
 		end
 	end)
+end
+
+
+function listFrame:renameProfileReferences(oldName, newName)
+	for _, profile in ipairs(self.profiles) do
+		if profile.loadProfiles and profile.loadProfiles[oldName] then
+			profile.loadProfiles[oldName] = nil
+			profile.loadProfiles[newName] = 1
+		end
+	end
+
+	for _, autoLoad in ipairs({self.db.autoLoadProfiles, AddonMgrAutoLoadChar or false}) do
+		if autoLoad then
+			for k, name in next, autoLoad do
+				if name == oldName then autoLoad[k] = newName end
+			end
+		end
+	end
+
+	if self.config.lastLoadProfileName == oldName then
+		self.config.lastLoadProfileName = newName
+	end
+	if self.config.lastLoadCharProfileName then
+		for guid, name in next, self.config.lastLoadCharProfileName do
+			if name == oldName then self.config.lastLoadCharProfileName[guid] = newName end
+		end
+	end
+	if self.preLastLoadProfileName == oldName then
+		self.preLastLoadProfileName = newName
+	end
 end
 
 

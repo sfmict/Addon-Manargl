@@ -72,7 +72,7 @@ C_Timer.After(0, function()
 		OnTooltipShow = function(tooltip)
 			if listFrame.db.omb.dontShowTooltip then return end
 			local title = C_AddOns.GetAddOnMetadata(addon, "Title")
-			local version  = C_AddOns.GetAddOnMetadata(addon, "Version")
+			local version = C_AddOns.GetAddOnMetadata(addon, "Version")
 			tooltip:SetText(("%s (|cffff7f3f%s|r)"):format(title, version))
 
 			local totalMem = 0

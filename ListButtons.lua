@@ -34,7 +34,7 @@ listFrame:HookScript("OnShow", function(self)
 		local info = {}
 
 		if level == 1 then
-			local checked = C_AddOns.GetAddOnEnableState(name, self.charGUID) > Enum.AddOnEnableState.None
+			local checked = C_AddOns.GetAddOnEnableState(name, self.addonCharacter) > Enum.AddOnEnableState.None
 
 			info.keepShownOnClick = true
 			info.notCheckable = true
@@ -59,7 +59,7 @@ listFrame:HookScript("OnShow", function(self)
 			info.disabled = function() return self.locked[name] end
 
 			if self.contextMenuData.isParent then
-				info.text = checked and L["Disable with children"] or L["Enalbe with children"]
+				info.text = checked and L["Disable with children"] or L["Enable with children"]
 				info.func = function()
 					self:enableAddon(name, not checked)
 					self:enableAddonChildren(self.contextMenuData.childList, name, not checked)
@@ -90,12 +90,12 @@ listFrame:HookScript("OnShow", function(self)
 			if #self.profiles > 0 then
 				info.text = L["Enabled in profile"]
 				info.value = "profile"
-				dd:ddAddButton(info, value)
+				dd:ddAddButton(info, level)
 			end
 
 			info.text = L["tags"]
 			info.value = "tags"
-			dd:ddAddButton(info, value)
+			dd:ddAddButton(info, level)
 
 			dd:ddAddSeparator(level)
 

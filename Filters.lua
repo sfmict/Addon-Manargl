@@ -97,7 +97,7 @@ listFrame:HookScript("OnShow", function(self)
 
 			info.text = CHECK_ALL
 			info.func = function()
-				self:setAllCategoryfilters(true)
+				self:setAllCategoryFilters(true)
 				self:updateFilters()
 				dd:ddRefresh(level)
 			end
@@ -105,7 +105,7 @@ listFrame:HookScript("OnShow", function(self)
 
 			info.text = UNCHECK_ALL
 			info.func = function()
-				self:setAllCategoryfilters(false)
+				self:setAllCategoryFilters(false)
 				self:updateFilters()
 				dd:ddRefresh(level)
 			end
@@ -121,7 +121,7 @@ listFrame:HookScript("OnShow", function(self)
 				icon = "interface/worldmap/worldmappartyicon",
 				OnClick = function(btn)
 					PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-					self:setAllCategoryfilters(false)
+					self:setAllCategoryFilters(false)
 					self.categoriesFilter[btn.value] = true
 					dd:ddRefresh(level)
 					self:updateFilters()
@@ -155,7 +155,7 @@ listFrame:HookScript("OnShow", function(self)
 
 			info.text = L["With all tags"]
 			info.func = function(_,_,_, checked)
-			self.withAllTagsFilter = checked
+				self.withAllTagsFilter = checked
 				self:updateFilters()
 			end
 			info.checked = function() return self.withAllTagsFilter end
@@ -223,7 +223,6 @@ listFrame:HookScript("OnShow", function(self)
 							self:updateFilters()
 							dd:ddRefresh(level)
 							dd:ddRefresh(level + 1)
-							self:updateFilters()
 						end,
 					},
 				}
@@ -299,7 +298,6 @@ listFrame:HookScript("OnShow", function(self)
 							dd:ddRefresh(i)
 						end
 						dd:ddRefresh(level + 1)
-						self:updateFilters()
 					end,
 				},
 			}
@@ -371,7 +369,7 @@ function listFrame:setAllTagFilter(enabled)
 end
 
 
-function listFrame:setAllCategoryfilters(enabled)
+function listFrame:setAllCategoryFilters(enabled)
 	for _, k in ipairs(self.categoriesFilter) do
 		self.categoriesFilter[k] = enabled
 	end
@@ -385,7 +383,7 @@ function listFrame:resetFilters()
 	self.noTagFilter = true
 	self.withAllTagsFilter = false
 	self:setAllTagFilter(true)
-	self:setAllCategoryfilters(true)
+	self:setAllCategoryFilters(true)
 	self:updateFilters()
 end
 
@@ -412,7 +410,7 @@ do
 	local matchPS = "^(.+)"..delimiter.."(.+)$"
 
 	function listFrame:getPTagPattern(tag)
-		return "^"..tag..delimiter
+		return "^"..tag:gsub("%p", "%%%0")..delimiter
 	end
 
 	function listFrame:getTagFromPS(pTag, sTag)

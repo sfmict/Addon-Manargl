@@ -294,7 +294,6 @@ listFrame:HookScript("OnShow", function(self)
 			info.disabled = not C_AddOnProfiler.IsEnabled()
 
 			info.func = function(btn)
-				self.cpuUpdateTimer = btn.value or 0
 				self.config.cpuUpdate = btn.value
 				if not self.config.cpuUpdate then
 					self.config.cpuSortBy = nil

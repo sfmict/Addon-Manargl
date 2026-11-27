@@ -262,7 +262,7 @@
 		</Scripts>
 	</Button>
 
-	<Frame name="AddonMgrListDevider" virtual="true">
+	<Frame name="AddonMgrListDivider" virtual="true">
 		<Layers>
 			<Layer level="ARTWORK">
 				<Texture parentKey="Divider" atlas="glues-characterSelect-cardDivider" useAtlasSize="true">
